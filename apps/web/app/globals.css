@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Palette: GitHub Primer light_high_contrast — see DESIGN.md §8.4. */
+:root {
+  --fg-default: #0E1116;
+  --fg-muted: #3D434A;
+  --fg-subtle: #66707B;
+  --fg-on-emphasis: #FFFFFF;
+
+  --bg-canvas: #FFFFFF;
+  --bg-default: #FFFFFF;
+  --bg-subtle: #F6F8FA;
+  --bg-muted: #E7ECF0;
+  --bg-emphasis: #0E1116;
+
+  --border-default: #20252C;
+  --border-muted: #88929D;
+  --border-subtle: rgba(1, 4, 9, 0.15);
+
+  --accent-fg: #0349B4;
+  --accent-emphasis: #0349B4;
+  --accent-muted: #368CF9;
+  --accent-subtle: #DDF4FF;
+
+  --success-fg: #055D20;
+  --success-emphasis: #055D20;
+  --success-subtle: #DAFBE1;
+
+  --attention-fg: #693E00;
+  --attention-emphasis: #693E00;
+  --attention-subtle: #FFF1C2;
+
+  --danger-fg: #B30021;
+  --danger-emphasis: #B30021;
+  --danger-subtle: #FFEBE9;
+}
+
+html,
+body {
+  background-color: var(--bg-canvas);
+  color: var(--fg-default);
+  font-family: theme("fontFamily.sans");
+  -webkit-font-smoothing: antialiased;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent-emphasis);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
