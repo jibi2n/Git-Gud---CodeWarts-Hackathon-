@@ -7,15 +7,25 @@ class TranscriptionService:
         self.client = OpenAI()
         self.temp_dir = "temp_audio"
 
-    async def transcribe(self, audio_path: str) -> str:
-        # Handles Taglish nuances via prompt engineering
-        with open(audio_path, "rb") as audio:
+    async def transcribe(self, audio_url: str) -> str:
+        # 1. Download the file from Supabase URL
+        local_filename = f"{self.temp_dir}/download_{int(time.time())}.webm"
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(audio_url)
+            with open(local_filename, "wb") as f:
+                f.write(resp.content)
+
+        # 2. Transcribe the local copy
+        with open(local_filename, "rb") as audio:
             response = self.client.audio.transcriptions.create(
                 model="whisper-1",
                 file=audio,
-                prompt="The speaker uses Filipino, Taglish, and English interchangeably."
+                prompt="Taglish conversation about work skills."
             )
-            return response.text
+        
+        # 3. Cleanup local copy immediately
+        os.remove(local_filename)
+        return response.text
 
     def enforce_deletion_policy(self):
         """Cron-ready logic to delete files older than 24 hours."""
