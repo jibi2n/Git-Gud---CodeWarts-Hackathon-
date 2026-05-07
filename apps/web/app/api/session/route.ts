@@ -29,3 +29,7 @@ export async function POST(req: Request) {
   const sessionId = `ses_${randomUUID().slice(0, 8)}`;
   return NextResponse.json({ sessionId, createdAt: new Date().toISOString() });
 }
+
+export async function DELETE(_req: Request) {
+  return new NextResponse(null, { status: 204 });
+}

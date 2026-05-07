@@ -2,11 +2,22 @@
 
 import { useProfileStore } from "@/stores/profile-store";
 import { useSessionStore } from "@/stores/session-store";
+import { useCaptureStore } from "@/stores/capture-store";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { tl } from "@/locales/tl";
-import { BigButton } from "@/components/shared/BigButton";
 import type { Competency } from "@/types/api";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 export default function ProfilePage({
   params,
@@ -15,6 +26,9 @@ export default function ProfilePage({
 }) {
   const router = useRouter();
   const storeSessionId = useSessionStore((s) => s.sessionId);
+  const resetSession = useSessionStore((s) => s.reset);
+  const resetProfile = useProfileStore((s) => s.reset);
+  const resetCapture = useCaptureStore((s) => s.reset);
 
   const transcript = useProfileStore((s) => s.transcript);
   const competencies = useProfileStore((s) => s.competencies);
@@ -22,6 +36,10 @@ export default function ProfilePage({
   const toggleReject = useProfileStore((s) => s.toggleReject);
   const readiness = useProfileStore((s) => s.readiness);
   const jobs = useProfileStore((s) => s.jobSuggestions);
+  const confirmed = useProfileStore((s) => s.confirmedCompetencies());
+
+  const [downloading, setDownloading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!storeSessionId || storeSessionId !== params.sessionId) {
@@ -30,6 +48,93 @@ export default function ProfilePage({
   }, [storeSessionId, params.sessionId, router]);
 
   if (!storeSessionId) return null;
+
+  async function downloadPdf() {
+    if (!readiness) return;
+    const readinessData = readiness;
+    const sessionId = storeSessionId;
+    const confirmedData = confirmed;
+    setDownloading(true);
+    try {
+      const mod = await import("@react-pdf/renderer");
+      const { pdf, Document, Page, Text, View, StyleSheet } = mod;
+
+      const styles = StyleSheet.create({
+        page: { padding: 32, fontSize: 12 },
+        title: { fontSize: 20, marginBottom: 8 },
+        sectionTitle: { fontSize: 14, marginTop: 16, marginBottom: 6 },
+        row: { flexDirection: "row", justifyContent: "space-between" },
+        pill: {
+          paddingVertical: 4,
+          paddingHorizontal: 8,
+          borderRadius: 999,
+          backgroundColor: "#111827",
+          color: "#ffffff",
+          fontSize: 10,
+        },
+        item: { marginBottom: 4 },
+      });
+
+      function Doc() {
+        return (
+          <Document>
+            <Page size="A4" style={styles.page}>
+              <Text style={styles.title}>{tl.app.name} Profile</Text>
+              <View style={styles.row}>
+                <Text>Session: {sessionId}</Text>
+                <Text style={styles.pill}>
+                  Readiness {Math.round(readinessData.score)}/100
+                </Text>
+              </View>
+
+              <Text style={styles.sectionTitle}>Competencies</Text>
+              {confirmedData.map((c) => (
+                <Text key={c.id} style={styles.item}>
+                  • {c.taglish_label} ({c.english_label})
+                </Text>
+              ))}
+
+              <Text style={styles.sectionTitle}>Readiness</Text>
+              <Text>{readinessData.reasoning}</Text>
+              {readinessData.matched_competencies.length > 0 && (
+                <Text style={{ marginTop: 6 }}>
+                  Strengths: {readinessData.matched_competencies.join(", ")}
+                </Text>
+              )}
+              {readinessData.missing_competencies.length > 0 && (
+                <Text style={{ marginTop: 4 }}>
+                  Areas to develop: {readinessData.missing_competencies.join(", ")}
+                </Text>
+              )}
+            </Page>
+          </Document>
+        );
+      }
+
+      const blob = await pdf(<Doc />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `boses-${sessionId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  async function deleteData() {
+    setDeleting(true);
+    try {
+      await fetch("/api/session", { method: "DELETE" });
+    } finally {
+      resetCapture();
+      resetProfile();
+      resetSession();
+      setDeleting(false);
+      router.push("/");
+    }
+  }
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-12">
@@ -56,34 +161,50 @@ export default function ProfilePage({
       </section>
 
       {readiness && (
-        <section className="mt-10 rounded-md border border-border bg-bg-default p-5">
-          <h2 className="text-[20px] font-semibold leading-tight">
-            {tl.profile.readinessTitle}
-          </h2>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-[30px] font-semibold leading-none">
-              {Math.round(readiness.score)}
-            </span>
-            <span className="text-[17px] text-fg-muted">/ 100</span>
-          </div>
-          <p className="mt-3 text-[16px] leading-relaxed text-fg-muted">
-            {readiness.reasoning}
-          </p>
-          {readiness.matched_competencies.length > 0 && (
-            <p className="mt-3 text-[14px] text-success-fg">
-              <strong>Strengths:</strong>{" "}
-              {readiness.matched_competencies.join(", ")}
-            </p>
-          )}
-          {readiness.missing_competencies.length > 0 && (
-            <p className="mt-2 text-[14px] text-attention-fg">
-              <strong>Areas to develop:</strong>{" "}
-              {readiness.missing_competencies.join(", ")}
-            </p>
-          )}
-          <p className="mt-4 text-[13px] leading-relaxed text-fg-subtle">
-            {tl.profile.disclaimer}
-          </p>
+        <section className="mt-10">
+          <Card>
+            <CardHeader>
+              <CardTitle>{tl.profile.readinessTitle}</CardTitle>
+              <CardDescription>{tl.profile.disclaimer}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[30px] font-semibold leading-none">
+                  {Math.round(readiness.score)}
+                </span>
+                <span className="text-[17px] text-fg-muted">/ 100</span>
+              </div>
+              <div className="mt-3">
+                <Progress value={Math.round(readiness.score)} />
+              </div>
+              <p className="mt-3 text-[16px] leading-relaxed text-fg-muted">
+                {readiness.reasoning}
+              </p>
+              {readiness.matched_competencies.length > 0 && (
+                <p className="mt-3 text-[14px] text-success-fg">
+                  <strong>Strengths:</strong>{" "}
+                  {readiness.matched_competencies.join(", ")}
+                </p>
+              )}
+              {readiness.missing_competencies.length > 0 && (
+                <p className="mt-2 text-[14px] text-attention-fg">
+                  <strong>Areas to develop:</strong>{" "}
+                  {readiness.missing_competencies.join(", ")}
+                </p>
+              )}
+            </CardContent>
+            <CardFooter className="gap-2">
+              <Button
+                size="lg"
+                className="w-full min-h-[56px] text-[17px]"
+                variant="secondary"
+                onClick={downloadPdf}
+                disabled={downloading}
+              >
+                {downloading ? tl.record.ctaProcessing : tl.profile.pdfCta}
+              </Button>
+            </CardFooter>
+          </Card>
         </section>
       )}
 
@@ -94,25 +215,28 @@ export default function ProfilePage({
           </h2>
           <div className="mt-3 flex flex-col gap-3">
             {jobs.map((j, i) => (
-              <div
-                key={i}
-                className="rounded-md border border-border bg-bg-default p-4"
-              >
-                <div className="text-[17px] font-medium">{j.archetype}</div>
-                <p className="mt-1 text-[16px] leading-relaxed text-fg-muted">
-                  {j.reasoning}
-                </p>
-              </div>
+              <Card key={i} size="sm">
+                <CardHeader>
+                  <CardTitle>{j.archetype}</CardTitle>
+                  <CardDescription>{j.reasoning}</CardDescription>
+                </CardHeader>
+              </Card>
             ))}
           </div>
         </section>
       )}
 
-      <div className="mt-10">
-        <BigButton variant="secondary" disabled>
-          {tl.profile.pdfCta} (coming soon)
-        </BigButton>
-      </div>
+      <footer className="mt-10">
+        <Button
+          size="lg"
+          className="w-full min-h-[56px] text-[17px]"
+          variant="destructive"
+          onClick={deleteData}
+          disabled={deleting}
+        >
+          {deleting ? tl.record.ctaProcessing : tl.footer.deleteData}
+        </Button>
+      </footer>
     </main>
   );
 }
@@ -127,38 +251,34 @@ function CompetencyCard({
   onToggle: () => void;
 }) {
   return (
-    <article
-      className={`rounded-md border p-4 transition-colors ${
-        rejected
-          ? "border-border-muted bg-bg-subtle opacity-60"
-          : "border-border bg-bg-default"
-      }`}
-    >
-      <div className="mb-2 inline-block rounded bg-attention-subtle px-2 py-0.5 text-[13px] text-attention-fg">
-        {tl.profile.aiBadge}
-      </div>
-      <div className="text-[17px] font-medium leading-tight">
-        {competency.taglish_label}
-      </div>
-      <div className="text-[14px] text-fg-muted">{competency.english_label}</div>
-      {competency.evidence_span && (
-        <p className="mt-2 text-[14px] italic leading-relaxed text-fg-muted">
-          “…{competency.evidence_span}…”
-        </p>
-      )}
-      <div className="mt-3 flex gap-2">
-        <button
+    <Card className={rejected ? "opacity-60" : ""} size="sm">
+      <CardHeader className="gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <Badge variant="secondary">{tl.profile.aiBadge}</Badge>
+          <Badge variant={rejected ? "outline" : "default"}>
+            {rejected ? tl.profile.stateRejected : tl.profile.stateConfirmed}
+          </Badge>
+        </div>
+        <CardTitle>{competency.taglish_label}</CardTitle>
+        <CardDescription>{competency.english_label}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {competency.evidence_span && (
+          <p className="text-[14px] italic leading-relaxed text-fg-muted">
+            “…{competency.evidence_span}…”
+          </p>
+        )}
+      </CardContent>
+      <CardFooter>
+        <Button
+          variant={rejected ? "secondary" : "outline"}
+          className="w-full min-h-[44px]"
           onClick={onToggle}
-          className={`min-h-[44px] flex-1 rounded-md border px-3 text-[14px] font-medium ${
-            rejected
-              ? "border-accent-emphasis bg-accent-subtle text-accent-fg"
-              : "border-border bg-bg-default text-fg"
-          }`}
           aria-pressed={rejected}
         >
-          {rejected ? "Restore" : tl.profile.reject}
-        </button>
-      </div>
-    </article>
+          {rejected ? tl.profile.restore : tl.profile.reject}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
