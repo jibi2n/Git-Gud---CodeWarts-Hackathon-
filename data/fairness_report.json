@@ -1,0 +1,39 @@
+{
+  "generatedAt": "2026-05-07T09:08:35Z",
+  "note": "Fairness audit on synthetic data. Production requires validation on real DSWD records.",
+  "byGender": {
+    "female": {
+      "total": 2,
+      "flagged": 2,
+      "flag_rate": 1.0,
+      "average_predicted_probability": 0.655
+    },
+    "male": {
+      "total": 1,
+      "flagged": 1,
+      "flag_rate": 1.0,
+      "average_predicted_probability": 0.41
+    }
+  },
+  "byRegionProxy": {
+    "urban": {
+      "total": 2,
+      "flagged": 2,
+      "flag_rate": 1.0,
+      "average_predicted_probability": 0.655
+    },
+    "rural": {
+      "total": 1,
+      "flagged": 1,
+      "flag_rate": 1.0,
+      "average_predicted_probability": 0.41
+    }
+  },
+  "disparityChecks": {
+    "gender_flag_rate_disparity": 0.0,
+    "region_flag_rate_disparity": 0.0,
+    "meets_target": true
+  },
+  "targetThreshold": 0.1,
+  "status": "evaluated_on_synthetic_data"
+}

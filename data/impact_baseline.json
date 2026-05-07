@@ -1,0 +1,36 @@
+{
+  "clusterLevel": {
+    "clusterSize": 247,
+    "flaggedThisWeek": 12,
+    "projectedDropoutsWithoutIntervention": 8,
+    "projectedDropoutsWithIntervention": 3,
+    "preventionRate": 0.625,
+    "intervalLow": 0.45,
+    "intervalHigh": 0.78
+  },
+  "nationalLevel": {
+    "totalMunicipalLinks": 1200,
+    "averageCaseloadPerLink": 240,
+    "estimatedFlaggedAnnually": 144000,
+    "estimatedAnnualPreventedDropouts": {
+      "low": 8000,
+      "high": 14000,
+      "central": 11000
+    }
+  },
+  "citations": [
+    {
+      "label": "DSWD 2023 Pantawid Pamilyang Pilipino Program Annual Report",
+      "type": "government_report"
+    },
+    {
+      "label": "DepEd Basic Education Statistics 2023",
+      "type": "government_report"
+    },
+    {
+      "label": "Reyes & Tabuga (2012). Conditional Cash Transfer Program in the Philippines: Is It Reaching the Extremely Poor? PIDS Discussion Paper.",
+      "type": "academic_research"
+    }
+  ],
+  "methodology": "Prevention rates are modeled estimates based on documented intervention efficacy in published Philippine social work literature. Production deployment requires validation against real DSWD outcome data."
+}

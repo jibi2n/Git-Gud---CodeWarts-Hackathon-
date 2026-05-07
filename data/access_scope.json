@@ -1,0 +1,47 @@
+{
+  "matrix": [
+    {
+      "role": "Social Worker (Municipal Link)",
+      "canSee": ["risk_score", "case_note", "interventions", "household_data"],
+      "cannotSee": [],
+      "rationale": "Direct intervention responsibility; the role for whom this tool is built"
+    },
+    {
+      "role": "DSWD Supervisor",
+      "canSee": ["risk_score", "case_note", "interventions"],
+      "cannotSee": ["raw_household_data_outside_caseload"],
+      "rationale": "Oversight and case escalation support"
+    },
+    {
+      "role": "DSWD Case Management",
+      "canSee": ["risk_score", "case_note", "aggregate_statistics"],
+      "cannotSee": ["individually_identifying_household_data"],
+      "rationale": "Program oversight; data minimization applies"
+    },
+    {
+      "role": "Family",
+      "canSee": ["case_note (with consent)", "interventions"],
+      "cannotSee": ["raw_risk_score"],
+      "rationale": "Collaborative discussion via social worker, not raw score"
+    },
+    {
+      "role": "School Teacher",
+      "canSee": [],
+      "cannotSee": ["risk_score", "case_note", "interventions", "household_data"],
+      "rationale": "Avoiding labeling effects documented in education research; teachers given at-risk labels often invest less in flagged students"
+    },
+    {
+      "role": "School Administrator",
+      "canSee": [],
+      "cannotSee": ["risk_score", "case_note", "interventions", "household_data"],
+      "rationale": "No direct intervention mandate; risk of misuse for enrollment decisions"
+    },
+    {
+      "role": "External Researchers",
+      "canSee": ["aggregate_statistics_only"],
+      "cannotSee": ["individual_predictions", "personally_identifying_data"],
+      "rationale": "Research access is anonymized, aggregated, and IRB-reviewed only"
+    }
+  ],
+  "principle": "Built to be useful only to those who can help, and useless to those who could harm."
+}
