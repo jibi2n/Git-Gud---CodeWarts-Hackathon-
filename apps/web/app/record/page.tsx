@@ -8,6 +8,7 @@ import { VoiceRecorder, type RecorderError } from "@/components/capture/VoiceRec
 import { useCaptureStore } from "@/stores/capture-store";
 import { uploadToSupabaseStorage } from "@/lib/supabase-storage";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function RecordPage() {
   const router = useRouter();
@@ -66,21 +67,23 @@ export default function RecordPage() {
     }
   }
 
+  const canContinue = audioUploadStatus === "uploaded" || audioUploadStatus === "error";
+
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-12">
-      <header className="mb-10 animate-fade-up [animation-fill-mode:both]">
-        <p className="mb-1 text-[13px] font-semibold uppercase tracking-widest text-accent-fg">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-10">
+      <header className="mb-6 animate-fade-up [animation-fill-mode:both]">
+        <p className="mb-1 text-[12px] font-semibold uppercase tracking-widest text-accent-fg">
           Step 1 of 3
         </p>
-        <h1 className="text-[30px] font-[800] leading-[1.2] tracking-tight">
+        <h1 className="text-[26px] font-[800] leading-[1.2] tracking-tight">
           {tl.record.headline}
         </h1>
-        <p className="mt-2 text-[16px] leading-relaxed text-fg-muted">
+        <p className="mt-1.5 text-[14px] leading-relaxed text-fg-muted">
           {tl.record.sub}
         </p>
       </header>
 
-      <div className="flex flex-1 flex-col justify-center gap-5 animate-fade-up [animation-delay:60ms] [animation-fill-mode:both]">
+      <div className="flex flex-1 flex-col justify-center gap-4 animate-fade-up [animation-delay:60ms] [animation-fill-mode:both]">
         <VoiceRecorder
           onComplete={(blob) => {
             setAudio(blob);
@@ -92,29 +95,29 @@ export default function RecordPage() {
         {error && (
           <div
             role="alert"
-            className="rounded-md border border-danger-emphasis/50 bg-danger-subtle px-4 py-3 text-[15px] text-danger-fg"
+            className="rounded-md border border-danger-emphasis/50 bg-danger-subtle px-4 py-3 text-[14px] text-danger-fg"
           >
             {error}
           </div>
         )}
 
-        <Button
-          size="lg"
-          className="w-full min-h-[56px] text-[17px]"
+        <button
+          className={cn(
+            "w-full min-h-[52px] rounded-md border text-[16px] font-semibold transition-all duration-200",
+            canContinue
+              ? "border-green-600 bg-green-600 text-white hover:bg-green-500 hover:border-green-500 shadow-sm shadow-green-600/30"
+              : "border-border bg-bg-subtle text-fg-subtle cursor-not-allowed opacity-40"
+          )}
           onClick={goNext}
-          disabled={audioUploadStatus === "idle" || audioUploadStatus === "uploading"}
+          disabled={!canContinue}
         >
-          {audioUploadStatus === "uploading"
-            ? tl.record.uploading
-            : audioUploadStatus === "uploaded" || audioUploadStatus === "error"
-            ? tl.record.next
-            : tl.record.cta}
-        </Button>
+          {audioUploadStatus === "uploading" ? tl.record.uploading : tl.record.next}
+        </button>
 
         <Button
           variant="ghost"
           size="lg"
-          className="w-full min-h-[48px] text-[15px] text-fg-muted"
+          className="w-full min-h-[44px] text-[14px] text-fg-muted"
           onClick={startDemoFlow}
         >
           {tl.record.skip}

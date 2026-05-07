@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/stores/session-store";
 import { tl } from "@/locales/tl";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function ConsentGate() {
@@ -64,14 +63,18 @@ export function ConsentGate() {
         </div>
       )}
 
-      <Button
-        size="lg"
-        className="mt-2 w-full min-h-[56px] text-[17px]"
+      <button
+        className={cn(
+          "mt-2 w-full min-h-[56px] rounded-md border text-[17px] font-semibold transition-all duration-200",
+          ready && !submitting
+            ? "border-green-600 bg-green-600 text-white hover:bg-green-500 hover:border-green-500 shadow-sm shadow-green-600/30"
+            : "border-border bg-bg-subtle text-fg-subtle cursor-not-allowed opacity-50"
+        )}
         onClick={start}
         disabled={!ready || submitting}
       >
         {submitting ? "Starting…" : ready ? tl.landing.cta : tl.landing.ctaDisabled}
-      </Button>
+      </button>
     </div>
   );
 }
@@ -92,7 +95,7 @@ function ConsentToggle({
       className={cn(
         "rounded-md border bg-bg-default p-4 transition-all duration-200",
         checked
-          ? "border-accent-emphasis/60 bg-accent-subtle"
+          ? "border-green-500/60 bg-green-950/20"
           : "border-border hover:border-border-muted"
       )}
     >
@@ -102,12 +105,15 @@ function ConsentToggle({
             type="checkbox"
             checked={checked}
             onChange={(e) => onChange(e.target.checked)}
-            className="peer size-5 shrink-0 cursor-pointer appearance-none rounded border border-border bg-bg-subtle transition-colors checked:border-accent-emphasis checked:bg-accent-emphasis"
+            className={cn(
+              "peer size-5 shrink-0 cursor-pointer appearance-none rounded border bg-bg-subtle transition-all duration-200",
+              checked ? "border-green-500 bg-green-600" : "border-border"
+            )}
             aria-describedby={`consent-body-${title.replace(/\s+/g, "-")}`}
           />
           {checked && (
             <svg
-              className="pointer-events-none absolute size-3 text-fg-onEmphasis"
+              className="pointer-events-none absolute size-3 text-white"
               viewBox="0 0 12 12"
               fill="none"
             >
@@ -122,7 +128,14 @@ function ConsentToggle({
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-[16px] font-semibold leading-tight">{title}</span>
+          <span
+            className={cn(
+              "text-[16px] font-semibold leading-tight transition-colors",
+              checked ? "text-green-400" : "text-fg"
+            )}
+          >
+            {title}
+          </span>
           <p
             id={`consent-body-${title.replace(/\s+/g, "-")}`}
             className="text-[14px] leading-relaxed text-fg-muted"

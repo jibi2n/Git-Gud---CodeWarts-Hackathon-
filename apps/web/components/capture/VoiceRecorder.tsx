@@ -72,7 +72,7 @@ export function VoiceRecorder({
     const { width, height } = canvas;
     ctx.clearRect(0, 0, width, height);
     ctx.lineWidth = 1.5;
-    ctx.strokeStyle = "rgba(96, 165, 250, 0.2)";
+    ctx.strokeStyle = "rgba(250, 204, 21, 0.2)";
     ctx.beginPath();
     ctx.moveTo(0, height / 2);
     ctx.lineTo(width, height / 2);
@@ -188,7 +188,7 @@ export function VoiceRecorder({
 
       ctx.clearRect(0, 0, width, height);
       ctx.lineWidth = 1.5;
-      ctx.strokeStyle = "rgb(96, 165, 250)";
+      ctx.strokeStyle = "rgb(250, 204, 21)";
       ctx.beginPath();
 
       const sliceWidth = width / data.length;
@@ -236,12 +236,12 @@ export function VoiceRecorder({
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-5">
+    <div className="flex w-full flex-col items-center gap-4">
       <div className="w-full rounded-md border border-border bg-bg-default overflow-hidden">
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center justify-between px-4 pt-3 pb-2">
           <div className="flex items-center gap-2">
             {status === "recording" && (
-              <span className="inline-block h-2 w-2 rounded-full bg-danger-fg animate-pulse-dot" />
+              <span className="inline-block h-2 w-2 rounded-full bg-yellow-400 animate-pulse-dot" />
             )}
             <span className="text-[15px] font-semibold tabular-nums text-fg">
               {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
@@ -251,7 +251,7 @@ export function VoiceRecorder({
             className={cn(
               "text-[13px] font-medium",
               status === "recording"
-                ? "text-danger-fg"
+                ? "text-yellow-400"
                 : status === "stopping"
                 ? "text-fg-muted"
                 : "text-fg-subtle"
@@ -277,7 +277,7 @@ export function VoiceRecorder({
       <Button
         size="lg"
         className={cn(
-          "w-full min-h-[56px] text-[17px]",
+          "w-full min-h-[52px] text-[16px]",
           status === "recording" &&
             "border-danger-emphasis bg-danger-emphasis text-fg-onEmphasis hover:opacity-90 animate-glow-ring"
         )}

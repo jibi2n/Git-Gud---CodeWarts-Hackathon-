@@ -2,21 +2,22 @@
 
 export const tl = {
   app: {
-    name: "San.AI",
-    tagline: "Your voice, your next step.",
+    name: "sana.AI",
+    tagline: "Your story holds skills the system hasn't recognized yet.",
+    sub: "Speak in Tagalog, English, or Taglish — we'll surface your competencies, match them to TESDA certifications, and build your professional profile.",
   },
 
   landing: {
-    headline: "Tell us your story.",
-    sub: "We'll surface your skills and map your next move.",
-    consentVoiceTitle: "Voice consent",
+    headline: "Recognizing your kasanayans and the doors they open.",
+    sub: "Tagalog, English, or Taglish. Just tell your story and we'll take care of the rest.",
+    consentVoiceTitle: "I allow voice recording",
     consentVoiceBody:
-      "You are giving us permission to record and process your voice. We will not sell or share it with anyone.",
-    consentImageTitle: "Photo consent",
+      "Your voice is processed to identify your skills. It is never sold or shared with anyone.",
+    consentImageTitle: "I allow document scanning",
     consentImageBody:
-      "Do you permit us to photograph your documents? We will store them securely.",
+      "Photos of your credentials are read once to detect skills, then deleted. We don't store them.",
     cta: "Get started",
-    ctaDisabled: "Please check both boxes to continue",
+    ctaDisabled: "Please accept both to continue",
   },
 
   record: {
@@ -56,7 +57,7 @@ export const tl = {
     stateRejected: "Removed",
     readinessTitle: "TESDA Readiness",
     jobsTitle: "Job opportunities",
-    pdfCta: "Download PDF profile",
+    pdfCta: "Download Report",
     disclaimer:
       "This score is a guide only, not a guarantee. Please consult TESDA for an official assessment.",
   },
