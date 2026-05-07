@@ -58,16 +58,19 @@ export default function RecordPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-12">
-      <header className="mb-10">
-        <h1 className="text-[30px] font-semibold leading-[1.25] tracking-tight">
+      <header className="mb-10 animate-fade-up [animation-fill-mode:both]">
+        <p className="mb-1 text-[13px] font-semibold uppercase tracking-widest text-accent-fg">
+          Step 1 of 3
+        </p>
+        <h1 className="text-[30px] font-[800] leading-[1.2] tracking-tight">
           {tl.record.headline}
         </h1>
-        <p className="mt-3 text-[17px] leading-snug text-fg-muted">
+        <p className="mt-2 text-[16px] leading-relaxed text-fg-muted">
           {tl.record.sub}
         </p>
       </header>
 
-      <div className="flex flex-1 flex-col justify-center gap-6">
+      <div className="flex flex-1 flex-col justify-center gap-5 animate-fade-up [animation-delay:60ms] [animation-fill-mode:both]">
         <VoiceRecorder
           onComplete={(blob) => {
             setAudio(blob);
@@ -79,7 +82,7 @@ export default function RecordPage() {
         {error && (
           <div
             role="alert"
-            className="rounded-md border border-danger-emphasis bg-danger-subtle px-4 py-3 text-[16px] text-danger-fg"
+            className="rounded-md border border-danger-emphasis/50 bg-danger-subtle px-4 py-3 text-[15px] text-danger-fg"
           >
             {error}
           </div>
@@ -99,9 +102,9 @@ export default function RecordPage() {
         </Button>
 
         <Button
-          variant="secondary"
+          variant="ghost"
           size="lg"
-          className="w-full min-h-[56px] text-[17px]"
+          className="w-full min-h-[48px] text-[15px] text-fg-muted"
           onClick={startDemoFlow}
         >
           {tl.record.skip}

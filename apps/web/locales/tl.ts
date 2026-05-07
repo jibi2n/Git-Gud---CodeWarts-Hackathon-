@@ -2,13 +2,13 @@
 
 export const tl = {
   app: {
-    name: "Boses",
-    tagline: "Your voice, your readiness.",
+    name: "San.AI",
+    tagline: "Your voice, your next step.",
   },
 
   landing: {
     headline: "Tell us your story.",
-    sub: "We'll surface your skills and your next step.",
+    sub: "We'll surface your skills and map your next move.",
     consentVoiceTitle: "Voice consent",
     consentVoiceBody:
       "You are giving us permission to record and process your voice. We will not sell or share it with anyone.",
@@ -22,11 +22,11 @@ export const tl = {
   record: {
     headline: "Record your story",
     sub: "Tell us about your work and experience. Up to 3 minutes.",
-    cta: "Record",
-    stop: "Stop",
+    cta: "Start recording",
+    stop: "Stop recording",
     ctaProcessing: "Processing…",
-    skip: "Use demo (no real recording)",
-    next: "Next",
+    skip: "Use demo instead",
+    next: "Continue",
     uploading: "Uploading…",
   },
 
@@ -35,20 +35,20 @@ export const tl = {
     sub: "Take a photo of any credential you have (barangay certificate, employer letter, etc.).",
     capture: "Capture",
     skip: "Skip",
-    done: "Done",
+    done: "Continue",
   },
 
   processing: {
-    headline: "Boses is processing…",
+    headline: "Analyzing your story…",
     transcribe: "Transcribing your voice",
-    extract: "Finding your skills",
+    extract: "Identifying your skills",
     vision: "Reading your documents",
-    score: "Checking your TESDA readiness",
+    score: "Calculating TESDA readiness",
   },
 
   profile: {
     headline: "Your skills",
-    aiBadge: "AI-detected — please review",
+    aiBadge: "AI-detected",
     confirm: "This is correct",
     reject: "Remove",
     restore: "Restore",
@@ -56,7 +56,7 @@ export const tl = {
     stateRejected: "Removed",
     readinessTitle: "TESDA Readiness",
     jobsTitle: "Job opportunities",
-    pdfCta: "Download PDF",
+    pdfCta: "Download PDF profile",
     disclaimer:
       "This score is a guide only, not a guarantee. Please consult TESDA for an official assessment.",
   },

@@ -3,39 +3,43 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Palette: GitHub Primer light_high_contrast — see DESIGN.md §8.4. */
+/* San.AI Design System — dark canvas, Filipino Navy + Maroon + Gold */
 :root {
-  --fg-default: #0E1116;
-  --fg-muted: #3D434A;
-  --fg-subtle: #66707B;
+  --bg-canvas: #060B17;
+  --bg-default: #0C1524;
+  --bg-subtle: #111F35;
+  --bg-muted: #182840;
+  --bg-emphasis: #2563EB;
+
+  --fg-default: #E8EEFF;
+  --fg-muted: #7B93BB;
+  --fg-subtle: #3D5578;
   --fg-on-emphasis: #FFFFFF;
 
-  --bg-canvas: #FFFFFF;
-  --bg-default: #FFFFFF;
-  --bg-subtle: #F6F8FA;
-  --bg-muted: #E7ECF0;
-  --bg-emphasis: #0E1116;
+  --border-default: #1C2C45;
+  --border-muted: #253A5E;
+  --border-subtle: rgba(96, 165, 250, 0.08);
 
-  --border-default: #20252C;
-  --border-muted: #88929D;
-  --border-subtle: rgba(1, 4, 9, 0.15);
+  /* Philippine Navy Blue */
+  --accent-fg: #60A5FA;
+  --accent-emphasis: #2563EB;
+  --accent-muted: #3B82F6;
+  --accent-subtle: rgba(37, 99, 235, 0.15);
 
-  --accent-fg: #0349B4;
-  --accent-emphasis: #0349B4;
-  --accent-muted: #368CF9;
-  --accent-subtle: #DDF4FF;
+  /* Gold / Sun */
+  --success-fg: #FCD34D;
+  --success-emphasis: #D97706;
+  --success-subtle: rgba(217, 119, 6, 0.15);
 
-  --success-fg: #055D20;
-  --success-emphasis: #055D20;
-  --success-subtle: #DAFBE1;
+  /* Amber */
+  --attention-fg: #FDE68A;
+  --attention-emphasis: #B45309;
+  --attention-subtle: rgba(180, 83, 9, 0.12);
 
-  --attention-fg: #693E00;
-  --attention-emphasis: #693E00;
-  --attention-subtle: #FFF1C2;
-
-  --danger-fg: #B30021;
-  --danger-emphasis: #B30021;
-  --danger-subtle: #FFEBE9;
+  /* Philippine Maroon */
+  --danger-fg: #FDA4AF;
+  --danger-emphasis: #9F1239;
+  --danger-subtle: rgba(159, 18, 57, 0.2);
 }
 
 html,
@@ -44,10 +48,25 @@ body {
   color: var(--fg-default);
   font-family: theme("fontFamily.sans");
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-image: radial-gradient(
+    ellipse 100% 55% at 50% -5%,
+    rgba(37, 99, 235, 0.12) 0%,
+    transparent 70%
+  );
+  background-attachment: fixed;
+}
+
+::selection {
+  background-color: rgba(37, 99, 235, 0.35);
+  color: #e8eeff;
 }
 
 *:focus-visible {
-  outline: 2px solid var(--accent-emphasis);
+  outline: 2px solid var(--accent-muted);
   outline-offset: 2px;
 }
 
@@ -58,4 +77,15 @@ body {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-muted);
+  border-radius: 3px;
 }

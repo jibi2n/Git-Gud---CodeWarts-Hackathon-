@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { tl } from "@/locales/tl";
+import { cn } from "@/lib/utils";
 
 export type RecorderError = {
   code: "not-supported" | "permission-denied" | "recording-failed";
@@ -39,6 +40,9 @@ export function VoiceRecorder({
   const analyserDataRef = useRef<Uint8Array | null>(null);
 
   const durationSec = Math.floor(durationMs / 1000);
+  const remaining = maxDurationSec - durationSec;
+  const minutes = Math.floor(durationSec / 60);
+  const seconds = durationSec % 60;
 
   const mimeType = useMemo(() => {
     if (typeof MediaRecorder === "undefined") return null;
@@ -53,6 +57,27 @@ export function VoiceRecorder({
       cleanup();
     };
   }, []);
+
+  useEffect(() => {
+    if (status === "idle" && canvasRef.current) {
+      drawIdleLine();
+    }
+  }, [status]);
+
+  function drawIdleLine() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const { width, height } = canvas;
+    ctx.clearRect(0, 0, width, height);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(96, 165, 250, 0.2)";
+    ctx.beginPath();
+    ctx.moveTo(0, height / 2);
+    ctx.lineTo(width, height / 2);
+    ctx.stroke();
+  }
 
   async function start() {
     if (!mimeType) {
@@ -161,8 +186,8 @@ export function VoiceRecorder({
       const height = canvas.height;
 
       ctx.clearRect(0, 0, width, height);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgb(16, 185, 129)";
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgb(96, 165, 250)";
       ctx.beginPath();
 
       const sliceWidth = width / data.length;
@@ -210,35 +235,55 @@ export function VoiceRecorder({
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-4">
-      <div className="w-full rounded-lg border border-border bg-bg-default p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-[16px] font-medium">00:{String(durationSec).padStart(2, "0")}</div>
-          <div className="text-[13px] text-fg-muted">
-            {status === "recording"
-              ? "Recording"
-              : status === "stopping"
-              ? "Stopping"
-              : "Ready"}
+    <div className="flex w-full flex-col items-center gap-5">
+      <div className="w-full rounded-md border border-border bg-bg-default overflow-hidden">
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <div className="flex items-center gap-2">
+            {status === "recording" && (
+              <span className="inline-block h-2 w-2 rounded-full bg-danger-fg animate-pulse-dot" />
+            )}
+            <span className="text-[15px] font-semibold tabular-nums text-fg">
+              {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+            </span>
           </div>
+          <span
+            className={cn(
+              "text-[13px] font-medium",
+              status === "recording"
+                ? "text-danger-fg"
+                : status === "stopping"
+                ? "text-fg-muted"
+                : "text-fg-subtle"
+            )}
+          >
+            {status === "recording"
+              ? `${remaining}s remaining`
+              : status === "stopping"
+              ? "Saving…"
+              : "Ready"}
+          </span>
         </div>
-        <div className="mt-3">
+        <div className="px-4 pb-4">
           <canvas
             ref={canvasRef}
             width={320}
-            height={64}
-            className="h-16 w-full rounded-md bg-bg-subtle"
+            height={56}
+            className="h-14 w-full rounded-md bg-bg-subtle"
           />
         </div>
       </div>
 
       <Button
         size="lg"
-        className="w-full min-h-[56px] text-[17px]"
+        className={cn(
+          "w-full min-h-[56px] text-[17px]",
+          status === "recording" &&
+            "border-danger-emphasis bg-danger-emphasis text-fg-onEmphasis hover:opacity-90 animate-glow-ring"
+        )}
         onClick={status === "recording" ? stop : start}
         disabled={status === "stopping"}
       >
-        {status === "recording" ? tl.record.stop : tl.record.cta}
+        {status === "recording" ? tl.record.stop : status === "stopping" ? "Saving…" : tl.record.cta}
       </Button>
     </div>
   );
