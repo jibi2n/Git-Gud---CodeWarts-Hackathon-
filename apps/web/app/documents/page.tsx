@@ -79,22 +79,31 @@ export default function DocumentsPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-12">
-      <header className="mb-6">
-        <h1 className="text-[30px] font-semibold leading-[1.25] tracking-tight">
+      <header className="mb-6 animate-fade-up [animation-fill-mode:both]">
+        <p className="mb-1 text-[13px] font-semibold uppercase tracking-widest text-accent-fg">
+          Step 2 of 3
+        </p>
+        <h1 className="text-[30px] font-[800] leading-[1.2] tracking-tight">
           {tl.documents.headline}
         </h1>
-        <p className="mt-3 text-[17px] leading-snug text-fg-muted">
+        <p className="mt-2 text-[16px] leading-relaxed text-fg-muted">
           {tl.documents.sub}
         </p>
       </header>
 
-      <DocumentCamera maxImages={remaining} onAdd={onAdd} onSkip={goProcessing} />
+      <div className="animate-fade-up [animation-delay:60ms] [animation-fill-mode:both]">
+        <DocumentCamera maxImages={remaining} onAdd={onAdd} onSkip={goProcessing} />
+      </div>
 
-      <section className="mt-6 flex flex-col gap-3">
-        {documents.map((d) => {
+      <section className="mt-5 flex flex-col gap-3">
+        {documents.map((d, i) => {
           const preview = previewUrls.find((p) => p.id === d.id)?.url ?? "";
           return (
-            <Card key={d.id} className="p-3">
+            <Card
+              key={d.id}
+              className="p-3 animate-fade-up [animation-fill-mode:both]"
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
               <div className="flex gap-3">
                 <Image
                   src={preview}
@@ -106,11 +115,11 @@ export default function DocumentsPage() {
                 />
                 <div className="flex flex-1 flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <div className="text-[16px] font-medium">Document</div>
+                    <div className="text-[15px] font-semibold">Document {i + 1}</div>
                     <Badge
                       variant={
                         d.uploadStatus === "uploaded"
-                          ? "default"
+                          ? "success"
                           : d.uploadStatus === "error"
                           ? "destructive"
                           : "secondary"
@@ -125,15 +134,15 @@ export default function DocumentsPage() {
                         : "Ready"}
                     </Badge>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="secondary"
-                      onClick={() => removeDocument(d.id)}
-                      disabled={d.uploadStatus === "uploading"}
-                    >
-                      Remove
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeDocument(d.id)}
+                    disabled={d.uploadStatus === "uploading"}
+                    className="w-fit"
+                  >
+                    Remove
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -144,7 +153,7 @@ export default function DocumentsPage() {
       {error && (
         <div
           role="alert"
-          className="mt-6 rounded-md border border-danger-emphasis bg-danger-subtle px-4 py-3 text-[16px] text-danger-fg"
+          className="mt-5 rounded-md border border-danger-emphasis/50 bg-danger-subtle px-4 py-3 text-[15px] text-danger-fg"
         >
           {error}
         </div>

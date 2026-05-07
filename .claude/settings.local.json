@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Christian\\\\OneDrive\\\\Microsoft Edge Drop Files\\\\Documents\\\\GitHub\\\\Git-Gud---CodeWarts-Hackathon-\\\\.claude\\\\worktrees\\\\kind-antonelli-b644b1\" -Recurse -Force)",
+      "Bash(Select-Object FullName)"
+    ]
+  }
+}

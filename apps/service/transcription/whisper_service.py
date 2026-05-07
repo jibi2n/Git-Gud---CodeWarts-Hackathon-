@@ -27,7 +27,12 @@ class TranscriptionService:
                 model="whisper-1",
                 file=audio,
                 prompt="Taglish conversation about work skills."
+                prompt="Taglish conversation about work skills."
             )
+        
+        # 3. Cleanup local copy immediately
+        os.remove(local_filename)
+        return response.text
         
         # 3. Cleanup local copy immediately
         os.remove(local_filename)

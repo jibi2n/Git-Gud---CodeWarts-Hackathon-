@@ -1,10 +1,5 @@
 "use client";
 
-// Two consent toggles per DESIGN.md §11.1. Both must be ON to proceed.
-// Each is paired with a plain-Tagalog explanation surfaced via <details>
-// rather than a modal, since modals are forbidden for primary flows
-// (DESIGN.md §7 anti-patterns).
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/stores/session-store";
@@ -46,7 +41,7 @@ export function ConsentGate() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <ConsentToggle
         title={tl.landing.consentVoiceTitle}
         body={tl.landing.consentVoiceBody}
@@ -63,7 +58,7 @@ export function ConsentGate() {
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-danger-emphasis bg-danger-subtle px-4 py-3 text-[16px] text-danger-fg"
+          className="rounded-md border border-danger-emphasis/50 bg-danger-subtle px-4 py-3 text-[15px] text-danger-fg"
         >
           {error}
         </div>
@@ -71,11 +66,11 @@ export function ConsentGate() {
 
       <Button
         size="lg"
-        className="w-full min-h-[56px] text-[17px]"
+        className="mt-2 w-full min-h-[56px] text-[17px]"
         onClick={start}
         disabled={!ready || submitting}
       >
-        {submitting ? "…" : ready ? tl.landing.cta : tl.landing.ctaDisabled}
+        {submitting ? "Starting…" : ready ? tl.landing.cta : tl.landing.ctaDisabled}
       </Button>
     </div>
   );
@@ -95,27 +90,42 @@ function ConsentToggle({
   return (
     <div
       className={cn(
-        "rounded-md border bg-bg-default p-4 transition-colors",
+        "rounded-md border bg-bg-default p-4 transition-all duration-200",
         checked
-          ? "border-accent-emphasis bg-accent-subtle"
-          : "border-border"
+          ? "border-accent-emphasis/60 bg-accent-subtle"
+          : "border-border hover:border-border-muted"
       )}
     >
       <label className="flex items-start gap-3 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          className="mt-1 size-5 shrink-0 cursor-pointer accent-accent-emphasis"
-          aria-describedby={`consent-body-${title.replace(/\s+/g, "-")}`}
-        />
+        <div className="relative mt-0.5 flex shrink-0 items-center justify-center">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(e) => onChange(e.target.checked)}
+            className="peer size-5 shrink-0 cursor-pointer appearance-none rounded border border-border bg-bg-subtle transition-colors checked:border-accent-emphasis checked:bg-accent-emphasis"
+            aria-describedby={`consent-body-${title.replace(/\s+/g, "-")}`}
+          />
+          {checked && (
+            <svg
+              className="pointer-events-none absolute size-3 text-fg-onEmphasis"
+              viewBox="0 0 12 12"
+              fill="none"
+            >
+              <path
+                d="M2 6l3 3 5-5"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </div>
         <div className="flex flex-col gap-1">
-          <span className="text-[17px] font-medium leading-tight">
-            {title}
-          </span>
+          <span className="text-[16px] font-semibold leading-tight">{title}</span>
           <p
             id={`consent-body-${title.replace(/\s+/g, "-")}`}
-            className="text-[16px] leading-relaxed text-fg-muted"
+            className="text-[14px] leading-relaxed text-fg-muted"
           >
             {body}
           </p>

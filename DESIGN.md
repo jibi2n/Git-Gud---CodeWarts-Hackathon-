@@ -1,8 +1,8 @@
-# Boses — Frontend Design Document
+# San.AI — Frontend Design Document
 
-**Scope**: Next.js 14 client application (`boses-web`)
+**Scope**: Next.js 14 client application (`san-ai-web`)
 **Owner**: Frontend Engineer (Role 3)
-**Status**: Pre-implementation
+**Status**: Active implementation
 **Companion docs**: `system-overview.md` (authoritative for architecture, data contracts, scope)
 
 ---
@@ -401,89 +401,89 @@ lg: 1024px+ (desktop, judging room)
 
 ### 8.3 Typography
 
-Reference: GitHub Primer's type system, modernized.
+Reference: Plus Jakarta Sans — a geometric humanist with Southeast Asian startup character and a wide weight range (400–800).
 
-**Font stack** (no web fonts on critical path):
+**Font stack**:
 
 ```
---font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-             "Helvetica Neue", Arial, sans-serif;
+--font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont,
+             "Segoe UI", sans-serif;
 --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono",
              Consolas, monospace;
 ```
 
-Inter is loaded via `next/font/local` (self-hosted, no Google Fonts request). System stack renders during font load — no FOIT. Mono is used only for the session ID display and any debug surfaces.
+Plus Jakarta Sans is loaded via `next/font/google` with weights 400, 500, 600, 700, 800. Mono is used only for the session ID display and debug surfaces.
 
 **Type scale** (semantic, not pixel-named):
 
 ```
-Display:    30px / 1.25 / 600   — page titles only, one per screen
-Heading:    20px / 1.30 / 600   — section headings
-Subheading: 17px / 1.40 / 500   — card titles, list group headers
-Body:       16px / 1.50 / 400   — default; never go smaller
-Body-strong:16px / 1.50 / 500   — emphasis without color
-Caption:    13px / 1.40 / 400   — timestamps, metadata, helper text
-Mono:       14px / 1.40 / 400   — session ID, technical strings
+Display:     42px / 1.0  / 800   — brand wordmark only
+Hero:        30px / 1.20 / 800   — page titles (font-weight: 800 = ExtraBold)
+Heading:     22px / 1.30 / 700   — section headings
+Subheading:  17px / 1.40 / 600   — card titles, list group headers
+Body:        16px / 1.50 / 400   — default; never go smaller
+Body-strong: 16px / 1.50 / 600   — emphasis without color
+Caption:     13px / 1.40 / 500   — timestamps, metadata, helper text
+Label:       13px / 1.0  / 700   — uppercase tracking-widest labels
+Mono:        14px / 1.40 / 400   — session ID, technical strings
 ```
 
-Letter-spacing: -0.011em on Display and Heading (Inter renders tight at large sizes). Default elsewhere.
+Letter-spacing: `tracking-tight` on Hero and Display. `tracking-widest` on uppercase Label text only.
 
-No font below 13px anywhere. Caption is reserved for non-essential text — never put actionable content in caption size.
+No font below 12px anywhere. Caption is reserved for non-essential text — never put actionable content in caption size.
+
+**Step labels** (e.g., "Step 1 of 3"): 13px / 700 / uppercase / `tracking-widest` / `text-accent-fg`. These orient the user without competing with the page title.
 
 ### 8.4 Color System
 
-Reference: GitHub's `light_high_contrast` Primer theme. The palette is intentionally restrained — neutrals do most of the work, with a single accent for primary actions and semantic colors for status.
+Reference: San.AI uses a dark-canvas palette inspired by the Philippine flag — deep navy, maroon, and gold. 65% Vercel-style bold contrast, 35% premium-government trustworthiness.
 
-**Light mode (default):**
+**Theme: dark canvas (default — implemented)**
 
 ```
-/* Foreground */
---fg-default:        #0E1116    /* primary text */
---fg-muted:          #3D434A    /* secondary text, captions */
---fg-subtle:         #66707B    /* placeholder, disabled */
---fg-on-emphasis:    #FFFFFF    /* text on filled accent */
+/* Background layers (deepest → most elevated) */
+--bg-canvas:         #060B17    /* near-black, blue-tinted — page background */
+--bg-default:        #0C1524    /* dark navy — card surfaces */
+--bg-subtle:         #111F35    /* inputs, hover states */
+--bg-muted:          #182840    /* dividers as surface */
+--bg-emphasis:       #2563EB    /* accent-colored inverted blocks */
 
-/* Background */
---bg-canvas:         #FFFFFF    /* page background */
---bg-default:        #FFFFFF    /* surface */
---bg-subtle:         #F6F8FA    /* card alt, hover */
---bg-muted:          #E7ECF0    /* dividers as surface */
---bg-emphasis:       #0E1116    /* high-contrast filled surface */
+/* Foreground */
+--fg-default:        #E8EEFF    /* off-white, blue-tinted */
+--fg-muted:          #7B93BB    /* secondary text */
+--fg-subtle:         #3D5578    /* placeholder, disabled */
+--fg-on-emphasis:    #FFFFFF    /* text on colored buttons/surfaces */
 
 /* Border */
---border-default:    #20252C    /* primary borders */
---border-muted:      #88929D    /* secondary borders */
---border-subtle:     rgba(1, 4, 9, 0.15)
+--border-default:    #1C2C45    /* main card borders */
+--border-muted:      #253A5E    /* secondary borders */
+--border-subtle:     rgba(96, 165, 250, 0.08)  /* ghost borders */
 
-/* Accent (single accent — used sparingly) */
---accent-fg:         #0349B4    /* link text, accent text */
---accent-emphasis:   #0349B4    /* primary button bg */
---accent-muted:      #368CF9    /* hover state */
---accent-subtle:     #DDF4FF    /* accent surface, badges */
+/* Philippine Navy Blue — primary accent */
+--accent-fg:         #60A5FA    /* bright blue, readable on dark */
+--accent-emphasis:   #2563EB    /* primary CTA background */
+--accent-muted:      #3B82F6    /* hover state */
+--accent-subtle:     rgba(37, 99, 235, 0.15)   /* tint surface */
 
-/* Semantic */
---success-fg:        #055D20
---success-emphasis:  #055D20
---success-subtle:    #DAFBE1
---attention-fg:      #693E00    /* warning */
---attention-emphasis:#693E00
---attention-subtle:  #FFF1C2
---danger-fg:         #B30021
---danger-emphasis:   #B30021
---danger-subtle:     #FFEBE9
+/* Gold / Sun — success */
+--success-fg:        #FCD34D    /* gold text */
+--success-emphasis:  #D97706    /* amber background */
+--success-subtle:    rgba(217, 119, 6, 0.15)
+
+/* Amber — attention */
+--attention-fg:      #FDE68A
+--attention-emphasis:#B45309
+--attention-subtle:  rgba(180, 83, 9, 0.12)
+
+/* Philippine Maroon — danger/destructive */
+--danger-fg:         #FDA4AF    /* readable on dark */
+--danger-emphasis:   #9F1239    /* maroon background */
+--danger-subtle:     rgba(159, 18, 57, 0.2)
 ```
 
-**Dark mode** (defer to post-hackathon; specify only if time permits):
+**Body background effect**: `radial-gradient(ellipse 100% 55% at 50% -5%, rgba(37,99,235,0.12), transparent 70%)` fixed to canvas — creates a subtle blue glow above the fold, grounding the dark theme.
 
-```
---fg-default:        #F0F3F6
---bg-canvas:         #0A0C10
---bg-default:        #0A0C10
---bg-subtle:         #272B33
---border-default:    #7A828E
---accent-fg:         #71B7FF
---accent-emphasis:   #409EFF
-```
+**Selection color**: `rgba(37,99,235,0.35)` background, `#E8EEFF` text.
 
 **Tailwind integration** — extend the theme rather than override it. In `tailwind.config.ts`:
 
@@ -541,20 +541,21 @@ Usage: `bg-bg-subtle`, `text-fg-muted`, `border-border-default`, `bg-accent-emph
 
 These are not suggestions — they are how the design holds together visually.
 
-1. **Neutrals carry 90% of the UI.** White surfaces, dark text, neutral borders. Color is for action and status, not decoration.
-2. **One accent color, used sparingly.** `accent-emphasis` appears on the primary action of a screen — usually one button. Never two primary actions in the same view.
-3. **Semantic colors only convey semantic meaning.** Green is success outcomes (competency confirmed), amber is caution (low-confidence AI extraction), red is destructive or error. Never use them decoratively.
-4. **High-contrast borders by default.** GitHub high-contrast uses near-black borders (`#20252C`) instead of the soft grays most design systems default to. This is a deliberate accessibility choice — keep it.
-5. **No gradients, no shadows beyond `shadow-sm`.** Flat surfaces with strong borders. Modern, restrained, fast to render on low-end devices.
-6. **No color-only states.** Confirmed competency = green border + checkmark icon + "Confirmed" text. Never rely on the green alone.
-7. **Contrast minimums**: 7:1 for body text against background (AAA), 4.5:1 minimum for large text and UI elements. The GitHub HC palette already meets this — don't introduce custom colors that break it.
+1. **Dark canvas carries the UI.** The navy-black backgrounds create depth. Color is for action, status, and brand — not decoration.
+2. **One accent color, used sparingly.** `accent-emphasis` (#2563EB navy blue) appears on the primary action of a screen. `accent-fg` (#60A5FA) for text accents, step labels, and wordmark `.AI`. Never two primary buttons in the same view.
+3. **Semantic colors only convey semantic meaning.** Gold/amber is success (TESDA match, competency confirmed). Maroon is destructive or error. Warm amber is caution (low-confidence AI). Never use them decoratively.
+4. **Border visibility on dark.** Borders must contrast against both the canvas and card surface. `--border-default: #1C2C45` is the minimum; use `--border-muted: #253A5E` for emphasis in hover/active states.
+5. **Moderate elevation only.** Cards are `bg-default` (#0C1524) on canvas (#060B17) — the ~8-unit luminance difference creates subtle depth without heavy shadows. Max elevation: `shadow-sm shadow-accent-emphasis/30` on primary buttons.
+6. **No color-only states.** Confirmed competency = gold badge + "Confirmed" text. Rejected = opacity-50 + grayscale + "Removed" badge. Never rely on color alone.
+7. **Contrast minimums**: `#E8EEFF` on `#060B17` = ≥11:1 (AAA). `#60A5FA` (accent-fg) on `#060B17` = ≥4.5:1. Do not introduce custom colors that break these ratios.
+8. **Brand accent usage**: The wordmark `San.AI` always renders with `.AI` in `text-accent-fg` (#60A5FA). This is the only persistent non-interactive use of the accent color.
 
 ### 8.6 Component Style Primitives
 
 Defaults that components inherit unless overridden:
 
 ```
-Border radius:   6px (rounded-md)   — buttons, inputs, cards
+Border radius:   8px (rounded-md)   — buttons, inputs, cards
 Border width:    1px standard, 2px on focus rings
 Focus ring:      2px solid var(--accent-emphasis), 2px offset
 Shadow:          none default; shadow-sm only for elevated dialogs
