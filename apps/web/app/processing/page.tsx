@@ -55,7 +55,7 @@ function ProcessingInner() {
           session_id: sessionId,
         })) as ExtractResponse;
         if (cancelled) return;
-        let merged = e.competencies;
+        let merged = e.competencies ?? [];
 
         const uploadedDocs = documents.filter(
           (d) => d.url && d.uploadStatus === "uploaded"
@@ -73,7 +73,7 @@ function ProcessingInner() {
             })
           );
           const inferred = results.flat();
-          merged = mergeCompetencies(e.competencies, inferred);
+          merged = mergeCompetencies(e.competencies ?? [], inferred);
         }
 
         if (cancelled) return;

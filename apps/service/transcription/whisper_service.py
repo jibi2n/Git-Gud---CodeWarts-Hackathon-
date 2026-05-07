@@ -1,22 +1,38 @@
 import os
 import time
-import tempfile
+from pathlib import Path
+from openai import OpenAI
 import httpx
-from openai import AsyncOpenAI
-
 
 class TranscriptionService:
     def __init__(self):
-        self.client = AsyncOpenAI()
+        self.client = OpenAI()
+        self.temp_dir = Path("temp_audio")
+
+        self.temp_dir.mkdir(parents=True, exist_ok=True)
 
     async def transcribe(self, audio_url: str) -> str:
-        async with httpx.AsyncClient(timeout=60) as http:
-            resp = await http.get(audio_url)
-            resp.raise_for_status()
+        # 1. Download the file from Supabase URL
+        file_id = int(time.time())
+        local_filename = f"{self.temp_dir}/download_{file_id}.webm"
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(audio_url)
 
-        with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as tmp:
-            tmp.write(resp.content)
-            tmp_path = tmp.name
+            with open(local_filename, "wb") as f:
+                f.write(resp.content)
+
+        # 2. Transcribe the local copy
+        with open(local_filename, "rb") as audio:
+            response = self.client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio,
+                prompt="Taglish conversation about work skills."
+            )
+        
+        # 3. Cleanup local copy immediately
+        os.remove(local_filename)
+        return response.text
+        
 
         try:
             with open(tmp_path, "rb") as audio:
