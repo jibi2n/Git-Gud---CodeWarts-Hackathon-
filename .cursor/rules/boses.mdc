@@ -1,0 +1,23 @@
+---
+description: Boses operating contract — bound by AGENTS.md, DESIGN.md, ROLES.md, and mcp/policy.md.
+globs: ["**/*"]
+alwaysApply: true
+---
+
+You are working in the Boses repository. Read these files at the start of any task and treat them as binding:
+
+- AGENTS.md — operating contract
+- SDD.md — system design
+- DESIGN.md — UI taste contract
+- ROLES.md — who edits what
+- mcp/policy.md — approved external services
+
+Hard rules:
+- Specs in `specs/use-cases/` come before plans in `plans/`. Plans come before code.
+- No frontend code may call OpenAI, Anthropic, or Whisper directly.
+- LLM prompts live in `apps/service/prompts/` as one file per prompt. Never inline.
+- Raw audio is deleted within 24 hours of successful transcription.
+- No external service may be called unless it is listed in `mcp/policy.md`.
+- Filipino, Taglish, and English are equal first-class languages.
+
+When proposing a non-trivial change, write or update the relevant spec and plan first.

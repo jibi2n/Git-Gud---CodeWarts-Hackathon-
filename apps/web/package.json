@@ -1,0 +1,11 @@
+{
+  "name": "boses-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Boses frontend (Next.js). Bootstrap with create-next-app — see README.",
+  "scripts": {
+    "dev": "echo 'Run: npx create-next-app@latest . --typescript --tailwind --app --src-dir' && exit 1",
+    "build": "echo 'Bootstrap Next.js first.' && exit 1",
+    "lint": "echo 'Bootstrap Next.js first.' && exit 0"
+  }
+}
