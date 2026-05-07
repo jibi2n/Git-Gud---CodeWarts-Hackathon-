@@ -161,7 +161,7 @@ export default function ProfilePage({
         </h1>
         {transcript && (
           <p className="mt-3 rounded-md border border-border bg-bg-subtle px-4 py-3 text-[14px] italic leading-relaxed text-fg-muted">
-            "{transcript}"
+            “{transcript}”
           </p>
         )}
       </header>
@@ -308,7 +308,7 @@ function CompetencyCard({
       {competency.evidence_span && (
         <CardContent>
           <p className="text-[13px] italic leading-relaxed text-fg-muted border-l-2 border-border-muted pl-3">
-            "…{competency.evidence_span}…"
+            …{competency.evidence_span}…
           </p>
         </CardContent>
       )}
