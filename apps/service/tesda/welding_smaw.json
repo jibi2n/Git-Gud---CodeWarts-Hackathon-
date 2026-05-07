@@ -1,0 +1,10 @@
+{
+  "track_id": "welding-smaw-nc2",
+  "name": "Shielded Metal Arc Welding NC II",
+  "competencies": [
+    {"id": "w-01", "label": "Weld Carbon Steel Plates", "weight": 40},
+    {"id": "w-02", "label": "Apply Safety Practices", "weight": 20},
+    {"id": "w-03", "label": "Interpret Drawings/Sketches", "weight": 20},
+    {"id": "w-04", "label": "Prepare Weld Materials", "weight": 20}
+  ]
+}
