@@ -46,12 +46,8 @@ export const useSessionStore = create<SessionState>()(
         }),
     }),
     {
-      name: "sana.session",
+      name: "boses.session",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        sessionId: state.sessionId,
-        phoneNumber: state.phoneNumber,
-      }),
     }
   )
 );

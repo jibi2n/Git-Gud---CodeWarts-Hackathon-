@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { tl } from "@/locales/tl";
+import { cn } from "@/lib/utils";
 
 export default function DocumentsPage() {
   const router = useRouter();
@@ -30,6 +31,8 @@ export default function DocumentsPage() {
   }, [sessionId, router]);
 
   const remaining = Math.max(0, 5 - documents.length);
+  const hasDocuments = documents.length > 0;
+  const allUploaded = hasDocuments && documents.every((d) => d.uploadStatus === "uploaded" || d.uploadStatus === "error");
 
   async function onAdd(file: File) {
     if (!sessionId) return;
@@ -62,11 +65,10 @@ export default function DocumentsPage() {
   }
 
   const previewUrls = useMemo(() => {
-    const pairs = documents.map((d) => ({
+    return documents.map((d) => ({
       id: d.id,
       url: URL.createObjectURL(d.file),
     }));
-    return pairs;
   }, [documents]);
 
   useEffect(() => {
@@ -78,15 +80,15 @@ export default function DocumentsPage() {
   if (!sessionId) return null;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-12">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-10">
       <header className="mb-6 animate-fade-up [animation-fill-mode:both]">
-        <p className="mb-1 text-[13px] font-semibold uppercase tracking-widest text-accent-fg">
+        <p className="mb-1 text-[12px] font-semibold uppercase tracking-widest text-accent-fg">
           Step 2 of 3
         </p>
-        <h1 className="text-[30px] font-[800] leading-[1.2] tracking-tight">
+        <h1 className="text-[26px] font-[800] leading-[1.2] tracking-tight">
           {tl.documents.headline}
         </h1>
-        <p className="mt-2 text-[16px] leading-relaxed text-fg-muted">
+        <p className="mt-1.5 text-[14px] leading-relaxed text-fg-muted">
           {tl.documents.sub}
         </p>
       </header>
@@ -95,78 +97,85 @@ export default function DocumentsPage() {
         <DocumentCamera maxImages={remaining} onAdd={onAdd} onSkip={goProcessing} />
       </div>
 
-      <section className="mt-5 flex flex-col gap-3">
-        {documents.map((d, i) => {
-          const preview = previewUrls.find((p) => p.id === d.id)?.url ?? "";
-          return (
-            <Card
-              key={d.id}
-              className="p-3 animate-fade-up [animation-fill-mode:both]"
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              <div className="flex gap-3">
-                <Image
-                  src={preview}
-                  alt=""
-                  width={64}
-                  height={64}
-                  unoptimized
-                  className="h-16 w-16 rounded-md object-cover"
-                />
-                <div className="flex flex-1 flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[15px] font-semibold">Document {i + 1}</div>
-                    <Badge
-                      variant={
-                        d.uploadStatus === "uploaded"
-                          ? "success"
+      {hasDocuments && (
+        <section className="mt-5 flex flex-col gap-3">
+          {documents.map((d, i) => {
+            const preview = previewUrls.find((p) => p.id === d.id)?.url ?? "";
+            return (
+              <Card
+                key={d.id}
+                className="p-3 animate-fade-up [animation-fill-mode:both]"
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                <div className="flex gap-3">
+                  <Image
+                    src={preview}
+                    alt=""
+                    width={56}
+                    height={56}
+                    unoptimized
+                    className="h-14 w-14 rounded-md object-cover shrink-0"
+                  />
+                  <div className="flex flex-1 items-center justify-between gap-2">
+                    <div className="flex flex-col gap-1">
+                      <div className="text-[14px] font-semibold">Document {i + 1}</div>
+                      <Badge
+                        variant={
+                          d.uploadStatus === "uploaded"
+                            ? "success"
+                            : d.uploadStatus === "error"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                        className="w-fit"
+                      >
+                        {d.uploadStatus === "uploaded"
+                          ? "Uploaded"
+                          : d.uploadStatus === "uploading"
+                          ? "Uploading…"
                           : d.uploadStatus === "error"
-                          ? "destructive"
-                          : "secondary"
-                      }
+                          ? "Error"
+                          : "Ready"}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeDocument(d.id)}
+                      disabled={d.uploadStatus === "uploading"}
+                      className="shrink-0 text-[13px]"
                     >
-                      {d.uploadStatus === "uploaded"
-                        ? "Uploaded"
-                        : d.uploadStatus === "uploading"
-                        ? "Uploading…"
-                        : d.uploadStatus === "error"
-                        ? "Error"
-                        : "Ready"}
-                    </Badge>
+                      Remove
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeDocument(d.id)}
-                    disabled={d.uploadStatus === "uploading"}
-                    className="w-fit"
-                  >
-                    Remove
-                  </Button>
                 </div>
-              </div>
-            </Card>
-          );
-        })}
-      </section>
+              </Card>
+            );
+          })}
+        </section>
+      )}
 
       {error && (
         <div
           role="alert"
-          className="mt-5 rounded-md border border-danger-emphasis/50 bg-danger-subtle px-4 py-3 text-[15px] text-danger-fg"
+          className="mt-4 rounded-md border border-danger-emphasis/50 bg-danger-subtle px-4 py-3 text-[14px] text-danger-fg"
         >
           {error}
         </div>
       )}
 
       <div className="mt-auto pt-6">
-        <Button
-          size="lg"
-          className="w-full min-h-[56px] text-[17px]"
+        <button
+          className={cn(
+            "w-full min-h-[52px] rounded-md border text-[16px] font-semibold transition-all duration-200",
+            allUploaded
+              ? "border-green-600 bg-green-600 text-white hover:bg-green-500 hover:border-green-500 shadow-sm shadow-green-600/30"
+              : "border-green-600/60 bg-green-600/80 text-white hover:bg-green-500 hover:border-green-500"
+          )}
           onClick={goProcessing}
         >
           {tl.documents.done}
-        </Button>
+        </button>
       </div>
     </main>
   );

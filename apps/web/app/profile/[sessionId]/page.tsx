@@ -50,75 +50,143 @@ export default function ProfilePage({
   if (!storeSessionId) return null;
 
   async function downloadPdf() {
-    if (!readiness) return;
-    const readinessData = readiness;
     const sessionId = storeSessionId;
     const confirmedData = confirmed;
+    const readinessData = readiness;
     setDownloading(true);
     try {
       const mod = await import("@react-pdf/renderer");
       const { pdf, Document, Page, Text, View, StyleSheet } = mod;
 
-      const styles = StyleSheet.create({
-        page: { padding: 40, fontSize: 12, backgroundColor: "#060B17", color: "#E8EEFF" },
-        wordmark: { fontSize: 28, fontWeight: "bold", marginBottom: 4 },
-        accent: { color: "#60A5FA" },
-        sessionLine: { fontSize: 11, color: "#7B93BB", marginBottom: 20 },
-        scoreRow: { flexDirection: "row", alignItems: "baseline", gap: 6, marginBottom: 16 },
-        scoreBig: { fontSize: 48, fontWeight: "bold", color: "#E8EEFF" },
-        scoreUnit: { fontSize: 18, color: "#7B93BB" },
-        sectionTitle: { fontSize: 13, fontWeight: "bold", color: "#7B93BB", textTransform: "uppercase", letterSpacing: 1.5, marginTop: 20, marginBottom: 8 },
-        competencyRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 6, gap: 8 },
-        bullet: { color: "#60A5FA", fontSize: 14 },
-        competencyLabel: { fontSize: 12, color: "#E8EEFF", flex: 1 },
-        competencySub: { fontSize: 11, color: "#7B93BB" },
-        reasoning: { fontSize: 12, color: "#7B93BB", lineHeight: 1.6, marginTop: 4 },
-        strengthLabel: { fontSize: 11, color: "#FCD34D", marginTop: 8 },
-        devLabel: { fontSize: 11, color: "#FDE68A", marginTop: 4 },
-        divider: { borderBottomWidth: 1, borderBottomColor: "#1C2C45", marginVertical: 16 },
+      const S = StyleSheet.create({
+        page: {
+          flexDirection: "column",
+          padding: 48,
+          fontSize: 11,
+          fontFamily: "Helvetica",
+          backgroundColor: "#FFFFFF",
+          color: "#111111",
+        },
+        header: { flexDirection: "column", marginBottom: 24 },
+        wordmark: { fontSize: 22, fontFamily: "Helvetica-Bold", marginBottom: 2 },
+        wordmarkAccent: { fontSize: 22, fontFamily: "Helvetica-Bold", color: "#2563EB" },
+        sessionLine: { fontSize: 10, color: "#6B7280", marginBottom: 0 },
+        divider: { borderBottomWidth: 1, borderBottomColor: "#E5E7EB", marginVertical: 16 },
+        sectionLabel: {
+          fontSize: 9,
+          fontFamily: "Helvetica-Bold",
+          color: "#6B7280",
+          textTransform: "uppercase",
+          letterSpacing: 1,
+          marginBottom: 8,
+        },
+        // Score
+        scoreRow: { flexDirection: "row", alignItems: "flex-end", marginBottom: 6 },
+        scoreBig: { fontSize: 40, fontFamily: "Helvetica-Bold", color: "#111111", lineHeight: 1 },
+        scoreUnit: { fontSize: 16, color: "#6B7280", marginBottom: 4, marginLeft: 4 },
+        reasoningText: { fontSize: 11, color: "#374151", lineHeight: 1.5 },
+        // Strength / develop boxes
+        box: {
+          flexDirection: "column",
+          borderRadius: 4,
+          paddingHorizontal: 10,
+          paddingVertical: 8,
+          marginTop: 10,
+        },
+        strengthBox: { backgroundColor: "#F0FDF4", borderWidth: 1, borderColor: "#BBF7D0" },
+        developBox: { backgroundColor: "#FAF5FF", borderWidth: 1, borderColor: "#E9D5FF" },
+        boxLabel: { fontSize: 9, fontFamily: "Helvetica-Bold", marginBottom: 4 },
+        strengthLabel: { color: "#15803D" },
+        developLabel: { color: "#7C3AED" },
+        boxText: { fontSize: 11, lineHeight: 1.5 },
+        strengthText: { color: "#166534" },
+        developText: { color: "#6D28D9" },
+        // Skills
+        skillRow: {
+          flexDirection: "column",
+          paddingVertical: 7,
+          borderBottomWidth: 1,
+          borderBottomColor: "#F3F4F6",
+        },
+        skillMain: { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#111111", marginBottom: 2 },
+        skillSub: { fontSize: 10, color: "#6B7280" },
+        evidenceText: { fontSize: 10, color: "#9CA3AF", fontStyle: "italic", marginTop: 3 },
+        // Jobs
+        jobRow: {
+          flexDirection: "column",
+          paddingVertical: 8,
+          borderBottomWidth: 1,
+          borderBottomColor: "#F3F4F6",
+        },
+        jobTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#1D4ED8", marginBottom: 3 },
+        jobDesc: { fontSize: 10, color: "#374151", lineHeight: 1.4 },
       });
 
       function Doc() {
         return (
           <Document>
-            <Page size="A4" style={styles.page}>
-              <View style={{ flexDirection: "row", alignItems: "baseline", marginBottom: 4 }}>
-                <Text style={styles.wordmark}>San</Text>
-                <Text style={[styles.wordmark, styles.accent]}>.AI</Text>
-              </View>
-              <Text style={styles.sessionLine}>Session {sessionId}</Text>
-
-              <View style={styles.divider} />
-
-              <Text style={styles.sectionTitle}>TESDA Readiness</Text>
-              <View style={styles.scoreRow}>
-                <Text style={styles.scoreBig}>{Math.round(readinessData.score)}</Text>
-                <Text style={styles.scoreUnit}>/ 100</Text>
-              </View>
-              <Text style={styles.reasoning}>{readinessData.reasoning}</Text>
-              {readinessData.matched_competencies.length > 0 && (
-                <Text style={styles.strengthLabel}>
-                  Strengths: {readinessData.matched_competencies.join(", ")}
-                </Text>
-              )}
-              {readinessData.missing_competencies.length > 0 && (
-                <Text style={styles.devLabel}>
-                  Areas to develop: {readinessData.missing_competencies.join(", ")}
-                </Text>
-              )}
-
-              <View style={styles.divider} />
-
-              <Text style={styles.sectionTitle}>Your Skills</Text>
-              {confirmedData.map((c) => (
-                <View key={c.id} style={styles.competencyRow}>
-                  <Text style={styles.bullet}>›</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.competencyLabel}>{c.taglish_label}</Text>
-                    <Text style={styles.competencySub}>{c.english_label}</Text>
-                  </View>
+            <Page size="A4" style={S.page}>
+              {/* Header */}
+              <View style={S.header}>
+                <View style={{ flexDirection: "row" }}>
+                  <Text style={S.wordmark}>sana</Text>
+                  <Text style={S.wordmarkAccent}>.AI</Text>
                 </View>
-              ))}
+                <Text style={S.sessionLine}>Session ID: {sessionId}</Text>
+                <Text style={[S.sessionLine, { marginTop: 2 }]}>
+                  Generated: {new Date().toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" })}
+                </Text>
+              </View>
+
+              <View style={S.divider} />
+
+              {/* Skills */}
+              {confirmedData.length > 0 && (
+                <View style={{ flexDirection: "column", marginBottom: 8 }}>
+                  <Text style={S.sectionLabel}>Detected Skills ({confirmedData.length})</Text>
+                  {confirmedData.map((c) => (
+                    <View key={c.id} style={S.skillRow}>
+                      <Text style={S.skillMain}>{c.taglish_label}</Text>
+                      {c.english_label ? <Text style={S.skillSub}>{c.english_label}</Text> : null}
+                      {c.evidence_span ? (
+                        <Text style={S.evidenceText}>"{c.evidence_span}"</Text>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* TESDA Readiness */}
+              {readinessData && (
+                <View style={{ flexDirection: "column", marginTop: 8 }}>
+                  <View style={S.divider} />
+                  <Text style={S.sectionLabel}>TESDA Readiness</Text>
+                  <View style={S.scoreRow}>
+                    <Text style={S.scoreBig}>{Math.round(readinessData.score)}</Text>
+                    <Text style={S.scoreUnit}>/ 100</Text>
+                  </View>
+                  {readinessData.reasoning ? (
+                    <Text style={S.reasoningText}>{readinessData.reasoning}</Text>
+                  ) : null}
+
+                  {readinessData.matched_competencies.length > 0 && (
+                    <View style={[S.box, S.strengthBox]}>
+                      <Text style={[S.boxLabel, S.strengthLabel]}>STRENGTHS</Text>
+                      <Text style={[S.boxText, S.strengthText]}>
+                        {readinessData.matched_competencies.join(", ")}
+                      </Text>
+                    </View>
+                  )}
+                  {readinessData.missing_competencies.length > 0 && (
+                    <View style={[S.box, S.developBox]}>
+                      <Text style={[S.boxLabel, S.developLabel]}>AREAS TO DEVELOP</Text>
+                      <Text style={[S.boxText, S.developText]}>
+                        {readinessData.missing_competencies.join(", ")}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
             </Page>
           </Document>
         );
@@ -128,7 +196,7 @@ export default function ProfilePage({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `sanai-${sessionId}.pdf`;
+      a.download = `sana-ai-report-${sessionId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -153,11 +221,13 @@ export default function ProfilePage({
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-12">
       <header className="mb-8 animate-fade-up [animation-fill-mode:both]">
         <div className="mb-1 flex items-baseline gap-0.5">
-          <span className="text-[24px] font-[800] leading-none tracking-tight text-fg">San</span>
+          <span className="text-[24px] font-[800] leading-none tracking-tight text-fg">sana</span>
           <span className="text-[24px] font-[800] leading-none tracking-tight text-accent-fg">.AI</span>
         </div>
         <h1 className="text-[30px] font-[800] leading-[1.2] tracking-tight">
-          {tl.profile.headline}
+          <span className="text-white">Here's your </span>
+          <span className="text-orange-400">Kasanayans</span>
+          <span className="text-white">!</span>
         </h1>
         {transcript && (
           <p className="mt-3 rounded-md border border-border bg-bg-subtle px-4 py-3 text-[14px] italic leading-relaxed text-fg-muted">
@@ -184,7 +254,7 @@ export default function ProfilePage({
 
       {readiness && (
         <section className="mt-10 animate-fade-up [animation-delay:200ms] [animation-fill-mode:both]">
-          <Card>
+          <Card className="bg-[#0F1E38] border-[#1C3050]">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>{tl.profile.readinessTitle}</CardTitle>
@@ -206,21 +276,21 @@ export default function ProfilePage({
                 {readiness.reasoning}
               </p>
               {readiness.matched_competencies.length > 0 && (
-                <div className="mt-4 rounded-md border border-success-emphasis/30 bg-success-subtle px-3 py-2">
-                  <p className="text-[13px] font-semibold text-success-fg uppercase tracking-wider mb-1">
+                <div className="mt-4 rounded-md border border-green-500/30 bg-green-950/30 px-3 py-2">
+                  <p className="text-[13px] font-semibold text-green-400 uppercase tracking-wider mb-1">
                     Strengths
                   </p>
-                  <p className="text-[14px] text-success-fg">
+                  <p className="text-[14px] text-green-300">
                     {readiness.matched_competencies.join(", ")}
                   </p>
                 </div>
               )}
               {readiness.missing_competencies.length > 0 && (
-                <div className="mt-3 rounded-md border border-attention-emphasis/30 bg-attention-subtle px-3 py-2">
-                  <p className="text-[13px] font-semibold text-attention-fg uppercase tracking-wider mb-1">
+                <div className="mt-3 rounded-md border border-purple-500/30 bg-purple-950/30 px-3 py-2">
+                  <p className="text-[13px] font-semibold text-purple-400 uppercase tracking-wider mb-1">
                     Areas to develop
                   </p>
-                  <p className="text-[14px] text-attention-fg">
+                  <p className="text-[14px] text-purple-300">
                     {readiness.missing_competencies.join(", ")}
                   </p>
                 </div>
@@ -242,26 +312,30 @@ export default function ProfilePage({
 
       {jobs.length > 0 && (
         <section className="mt-8 animate-fade-up [animation-delay:280ms] [animation-fill-mode:both]">
-          <h2 className="mb-1 text-[13px] font-semibold uppercase tracking-widest text-accent-fg">
+          <h2 className="mb-1 text-[13px] font-semibold uppercase tracking-widest text-orange-400">
             Opportunities
           </h2>
-          <h3 className="mb-4 text-[22px] font-[800] leading-tight tracking-tight">
+          <h3 className="mb-4 text-[22px] font-[800] leading-tight tracking-tight text-white">
             {tl.profile.jobsTitle}
           </h3>
           <div className="flex flex-col gap-3">
-            {jobs.map((j, i) => (
-              <Card
-                key={i}
-                size="sm"
-                className="animate-fade-up [animation-fill-mode:both]"
-                style={{ animationDelay: `${320 + i * 60}ms` }}
-              >
-                <CardHeader>
-                  <CardTitle>{j.archetype}</CardTitle>
-                  <CardDescription>{j.reasoning}</CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
+            {jobs.map((j, i) => {
+              const accent = i % 3 === 0 ? "border-orange-500/30 bg-orange-950/20" : i % 3 === 1 ? "border-blue-500/30 bg-blue-950/20" : "border-border bg-bg-subtle";
+              const titleColor = i % 3 === 0 ? "text-orange-300" : i % 3 === 1 ? "text-blue-300" : "text-white";
+              return (
+                <Card
+                  key={i}
+                  size="sm"
+                  className={`animate-fade-up [animation-fill-mode:both] ${accent}`}
+                  style={{ animationDelay: `${320 + i * 60}ms` }}
+                >
+                  <CardHeader>
+                    <CardTitle className={titleColor}>{j.archetype}</CardTitle>
+                    <CardDescription>{j.reasoning}</CardDescription>
+                  </CardHeader>
+                </Card>
+              );
+            })}
           </div>
         </section>
       )}
@@ -292,7 +366,7 @@ function CompetencyCard({
 }) {
   return (
     <Card
-      className={rejected ? "opacity-50 grayscale" : ""}
+      className={rejected ? "opacity-50 grayscale bg-bg-subtle" : "bg-bg-subtle"}
       size="sm"
     >
       <CardHeader className="gap-2">
@@ -314,8 +388,12 @@ function CompetencyCard({
       )}
       <CardFooter>
         <Button
-          variant={rejected ? "secondary" : "outline"}
-          className="w-full min-h-[44px]"
+          variant="outline"
+          className={
+            rejected
+              ? "w-full min-h-[44px] border-border text-fg-muted hover:border-green-500 hover:text-green-400 hover:bg-green-950/20 transition-colors"
+              : "w-full min-h-[44px] border-border text-fg-muted hover:border-red-500 hover:text-red-400 hover:bg-red-950/20 transition-colors"
+          }
           onClick={onToggle}
           aria-pressed={rejected}
         >

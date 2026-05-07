@@ -125,7 +125,7 @@ function ProcessingInner() {
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 pb-10 pt-12">
       <header className="mb-10 animate-fade-up [animation-fill-mode:both]">
         <div className="mb-2 flex items-baseline gap-0.5">
-          <span className="text-[28px] font-[800] leading-none tracking-tight text-fg">San</span>
+          <span className="text-[28px] font-[800] leading-none tracking-tight text-fg">sana</span>
           <span className="text-[28px] font-[800] leading-none tracking-tight text-accent-fg">.AI</span>
         </div>
         <h1 className="text-[22px] font-semibold leading-snug text-fg-muted">

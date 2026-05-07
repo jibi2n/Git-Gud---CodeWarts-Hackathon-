@@ -10,9 +10,9 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "San.AI",
+  title: "sana.AI",
   description:
-    "Tell us your story. We'll surface your skills and your next step.",
+    "Your story holds skills the system hasn't recognized yet.",
 };
 
 export const viewport: Viewport = {
