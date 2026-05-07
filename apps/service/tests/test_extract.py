@@ -15,3 +15,11 @@ def test_extract_maps_to_welding_competencies_without_transformers() -> None:
     out = svc._keyword_fallback(transcript)
     ids = {c["id"] for c in out}
     assert {"w-01", "w-02", "w-03", "w-04"} & ids
+
+
+def test_extract_returns_empty_for_non_welding_story() -> None:
+    os.environ["BOSE_DISABLE_TRANSFORMERS"] = "1"
+    svc = ExtractorService()
+    transcript = "Limang taon na akong nagmamaneho ng tricycle at nag-aasikaso ng biyahe at pasahero."
+    out = svc._keyword_fallback(transcript)
+    assert out == []

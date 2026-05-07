@@ -18,6 +18,12 @@ class ExtractorService:
         self.track_id: str = str(raw.get("track_id") or "unknown")
         self.track_name: str = str(raw.get("name") or "").strip()
         self.catalog: list[dict[str, Any]] = list(raw.get("competencies") or [])
+        self._keyword_gate: dict[str, tuple[set[str], set[str]]] = {
+            "w-01": ({"weld", "welding", "hinang"}, {"plate", "plates", "steel", "carbon", "pipe", "rod"}),
+            "w-02": (set(), {"safety", "ppe", "mask", "helmet", "goggles", "gloves"}),
+            "w-03": (set(), {"drawing", "drawings", "sketch", "sketches", "blueprint"}),
+            "w-04": (set(), {"prepare", "preparation", "materials", "material", "tools", "tool"}),
+        }
 
     def _segments(self, text: str) -> list[str]:
         segs = [s.strip() for s in _SPLIT_RE.split(text) if s.strip()]
@@ -64,8 +70,26 @@ class ExtractorService:
         pooled = self._mean_pool(out.last_hidden_state, encoded["attention_mask"])
         return torch.nn.functional.normalize(pooled, p=2, dim=1)
 
+    def _track_relevant(self, t: str) -> bool:
+        if self.track_id.startswith("welding"):
+            return any(k in t for k in ("weld", "welding", "hinang", "smaw", "electrode", "arc"))
+        return True
+
+    def _passes_gate(self, competency_id: str, t: str) -> bool:
+        gate = self._keyword_gate.get(competency_id)
+        if not gate:
+            return True
+        required_any, supporting_any = gate
+        if required_any and not any(k in t for k in required_any):
+            return False
+        if supporting_any and not any(k in t for k in supporting_any):
+            return False
+        return True
+
     def _keyword_fallback(self, transcript: str) -> list[dict[str, Any]]:
         t = transcript.lower()
+        if not self._track_relevant(t):
+            return []
         segs = self._segments(transcript)
         out: list[dict[str, Any]] = []
 
@@ -74,8 +98,8 @@ class ExtractorService:
             label = str(comp.get("label") or "").strip()
             if not cid or not label:
                 continue
-            if "weld" in t or "hinang" in t:
-                if cid == "w-01" and ("plate" in t or "plato" in t or "steel" in t or "carbon" in t):
+            if self._passes_gate(cid, t):
+                if cid == "w-01":
                     ev = next((s for s in segs if "weld" in s.lower() or "hinang" in s.lower()), segs[0] if segs else None)
                     out.append(
                         {
@@ -86,7 +110,7 @@ class ExtractorService:
                             "evidence_span": ev,
                         }
                     )
-                if cid == "w-02" and ("safety" in t or "ppe" in t or "mask" in t):
+                if cid == "w-02":
                     ev = next((s for s in segs if "safety" in s.lower() or "ppe" in s.lower() or "mask" in s.lower()), segs[0] if segs else None)
                     out.append(
                         {
@@ -97,7 +121,7 @@ class ExtractorService:
                             "evidence_span": ev,
                         }
                     )
-                if cid == "w-03" and ("drawing" in t or "sketch" in t or "blueprint" in t):
+                if cid == "w-03":
                     ev = next((s for s in segs if "drawing" in s.lower() or "sketch" in s.lower() or "blueprint" in s.lower()), segs[0] if segs else None)
                     out.append(
                         {
@@ -108,7 +132,7 @@ class ExtractorService:
                             "evidence_span": ev,
                         }
                     )
-                if cid == "w-04" and ("prepare" in t or "materials" in t or "tools" in t):
+                if cid == "w-04":
                     ev = next((s for s in segs if "prepare" in s.lower() or "materials" in s.lower() or "tools" in s.lower()), segs[0] if segs else None)
                     out.append(
                         {
@@ -131,6 +155,9 @@ class ExtractorService:
 
     async def extract_from_text(self, transcript: str) -> list[dict[str, Any]]:
         if not transcript.strip():
+            return []
+        t = transcript.lower()
+        if not self._track_relevant(t):
             return []
 
         segs = self._segments(transcript)
@@ -160,16 +187,21 @@ class ExtractorService:
             sims = label_vecs @ seg_vecs.T
             best_sim, best_idx = sims.max(dim=1)
 
-            threshold = 0.34
+            threshold = 0.45
             out: list[dict[str, Any]] = []
-            for i, cid in enumerate(ids):
-                sim = float(best_sim[i].item())
+            scored = [(float(best_sim[i].item()), i) for i in range(len(ids))]
+            scored.sort(key=lambda x: x[0], reverse=True)
+            max_results = 4
+            for sim, i in scored:
+                if len(out) >= max_results:
+                    break
+                cid = ids[i]
                 if sim < threshold:
+                    break
+                if not self._passes_gate(cid, t):
                     continue
                 seg = segs[int(best_idx[i].item())]
-                conf = max(
-                    0.0, min(1.0, (sim - threshold) / max(1e-6, 1.0 - threshold))
-                )
+                conf = max(0.0, min(1.0, (sim - threshold) / max(1e-6, 1.0 - threshold)))
                 out.append(
                     {
                         "id": cid,
