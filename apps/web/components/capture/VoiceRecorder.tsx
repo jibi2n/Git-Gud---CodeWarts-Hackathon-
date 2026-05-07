@@ -135,6 +135,7 @@ export function VoiceRecorder({
     setStatus("stopping");
     try {
       mediaRecorderRef.current?.stop();
+      //mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
     } catch {
       onError({ code: "recording-failed", message: "Stop failed" });
       cleanup();

@@ -1,17 +1,23 @@
 import os
 import time
+from pathlib import Path
 from openai import OpenAI
+import httpx
 
 class TranscriptionService:
     def __init__(self):
         self.client = OpenAI()
-        self.temp_dir = "temp_audio"
+        self.temp_dir = Path("temp_audio")
+
+        self.temp_dir.mkdir(parents=True, exist_ok=True)
 
     async def transcribe(self, audio_url: str) -> str:
         # 1. Download the file from Supabase URL
-        local_filename = f"{self.temp_dir}/download_{int(time.time())}.webm"
+        file_id = int(time.time())
+        local_filename = f"{self.temp_dir}/download_{file_id}.webm"
         async with httpx.AsyncClient() as client:
             resp = await client.get(audio_url)
+
             with open(local_filename, "wb") as f:
                 f.write(resp.content)
 
@@ -21,7 +27,12 @@ class TranscriptionService:
                 model="whisper-1",
                 file=audio,
                 prompt="Taglish conversation about work skills."
+                prompt="Taglish conversation about work skills."
             )
+        
+        # 3. Cleanup local copy immediately
+        os.remove(local_filename)
+        return response.text
         
         # 3. Cleanup local copy immediately
         os.remove(local_filename)

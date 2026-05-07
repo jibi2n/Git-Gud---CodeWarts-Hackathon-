@@ -53,7 +53,17 @@ export default function RecordPage() {
   }
 
   function goNext() {
-    router.push("/documents");
+    const audioUrlFromStore = useCaptureStore.getState().audioUrl;
+
+    console.log(audioUrlFromStore);
+
+    if (audioUrlFromStore) {
+      // Pass the real Supabase URL to the processing page
+      router.push(`/processing?audio=${encodeURIComponent(audioUrlFromStore)}`);
+    } else {
+      // Fallback if upload failed or didn't happen
+      router.push("/documents");
+    }
   }
 
   return (
