@@ -4,19 +4,25 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSessionStore } from "@/stores/session-store";
 import { useProfileStore } from "@/stores/profile-store";
+import { useCaptureStore } from "@/stores/capture-store";
 import { tl } from "@/locales/tl";
 import type {
+  Competency,
   ExtractResponse,
   ScoreResponse,
   TranscribeResponse,
+  VisionResponse,
 } from "@/types/api";
 
-type Step = "transcribe" | "extract" | "score" | "done" | "error";
+type Step = "transcribe" | "extract" | "vision" | "score" | "done" | "error";
 
 function ProcessingInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const audioUrl = searchParams.get("audio") ?? "demo://taglish-sample-1";
+  const audioFromStore = useCaptureStore((s) => s.audioUrl);
+  const documents = useCaptureStore((s) => s.documents);
+  const audioUrl =
+    searchParams.get("audio") ?? audioFromStore ?? "demo://taglish-sample-1";
 
   const sessionId = useSessionStore((s) => s.sessionId);
   const setTranscript = useProfileStore((s) => s.setTranscript);
@@ -49,12 +55,34 @@ function ProcessingInner() {
           session_id: sessionId,
         })) as ExtractResponse;
         if (cancelled) return;
-        setCompetencies(e.competencies);
+        let merged = e.competencies;
+
+        const uploadedDocs = documents.filter(
+          (d) => d.url && d.uploadStatus === "uploaded"
+        );
+
+        if (uploadedDocs.length > 0) {
+          setStep("vision");
+          const results = await Promise.all(
+            uploadedDocs.map(async (d) => {
+              const r = (await postJson("/api/vision", {
+                image_url: d.url,
+                session_id: sessionId,
+              })) as VisionResponse;
+              return r.inferred_competencies ?? [];
+            })
+          );
+          const inferred = results.flat();
+          merged = mergeCompetencies(e.competencies, inferred);
+        }
+
+        if (cancelled) return;
+        setCompetencies(merged);
 
         setStep("score");
         const s = (await postJson("/api/score", {
           session_id: sessionId,
-          competencies: e.competencies,
+          competencies: merged,
         })) as ScoreResponse;
         if (cancelled) return;
         setScore(s.readiness, s.job_suggestions);
@@ -72,11 +100,22 @@ function ProcessingInner() {
     return () => {
       cancelled = true;
     };
-  }, [audioUrl, sessionId, router, setTranscript, setCompetencies, setScore]);
+  }, [
+    audioUrl,
+    sessionId,
+    documents,
+    router,
+    setTranscript,
+    setCompetencies,
+    setScore,
+  ]);
 
   const items: Array<{ key: Step; label: string }> = [
     { key: "transcribe", label: tl.processing.transcribe },
     { key: "extract", label: tl.processing.extract },
+    ...(documents.some((d) => d.url && d.uploadStatus === "uploaded")
+      ? [{ key: "vision" as const, label: tl.processing.vision }]
+      : []),
     { key: "score", label: tl.processing.score },
   ];
 
@@ -165,4 +204,28 @@ async function postJson(url: string, body: unknown): Promise<unknown> {
   });
   if (!r.ok) throw new Error(`${url} ${r.status}`);
   return r.json();
+}
+
+function mergeCompetencies(base: Competency[], inferred: Competency[]) {
+  const byKey = new Map<string, Competency>();
+
+  const keyOf = (c: Competency) =>
+    (c.english_label || c.taglish_label).trim().toLowerCase();
+
+  for (const c of base) {
+    byKey.set(keyOf(c), c);
+  }
+  for (const c of inferred) {
+    const key = keyOf(c);
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, c);
+      continue;
+    }
+    if ((c.confidence ?? 0) > (existing.confidence ?? 0)) {
+      byKey.set(key, { ...existing, ...c });
+    }
+  }
+
+  return Array.from(byKey.values());
 }

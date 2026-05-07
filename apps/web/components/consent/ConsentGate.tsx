@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/stores/session-store";
 import { tl } from "@/locales/tl";
-import { BigButton } from "@/components/shared/BigButton";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function ConsentGate() {
@@ -69,9 +69,14 @@ export function ConsentGate() {
         </div>
       )}
 
-      <BigButton onClick={start} disabled={!ready || submitting}>
+      <Button
+        size="lg"
+        className="w-full min-h-[56px] text-[17px]"
+        onClick={start}
+        disabled={!ready || submitting}
+      >
         {submitting ? "…" : ready ? tl.landing.cta : tl.landing.ctaDisabled}
-      </BigButton>
+      </Button>
     </div>
   );
 }

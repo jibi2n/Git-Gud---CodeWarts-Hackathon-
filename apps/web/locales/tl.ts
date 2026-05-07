@@ -23,14 +23,26 @@ export const tl = {
     headline: "Record your story",
     sub: "Tell us about your work and experience. Up to 3 minutes.",
     cta: "Record",
+    stop: "Stop",
     ctaProcessing: "Processing…",
     skip: "Use demo (no real recording)",
+    next: "Next",
+    uploading: "Uploading…",
+  },
+
+  documents: {
+    headline: "Documents (optional)",
+    sub: "Take a photo of any credential you have (barangay certificate, employer letter, etc.).",
+    capture: "Capture",
+    skip: "Skip",
+    done: "Done",
   },
 
   processing: {
     headline: "Boses is processing…",
     transcribe: "Transcribing your voice",
     extract: "Finding your skills",
+    vision: "Reading your documents",
     score: "Checking your TESDA readiness",
   },
 
@@ -39,6 +51,9 @@ export const tl = {
     aiBadge: "AI-detected — please review",
     confirm: "This is correct",
     reject: "Remove",
+    restore: "Restore",
+    stateConfirmed: "Confirmed",
+    stateRejected: "Removed",
     readinessTitle: "TESDA Readiness",
     jobsTitle: "Job opportunities",
     pdfCta: "Download PDF",
