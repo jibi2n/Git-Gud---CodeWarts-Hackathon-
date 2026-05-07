@@ -1,11 +1,12 @@
 import json
-from pathlib import Path
+import os
 
 class PathwayScorer:
     def __init__(self):
         # Load the decided hackathon track
-        path = Path(__file__).resolve().parents[1] / "tesda" / "welding_smaw.json"
-        self.track = json.loads(path.read_text(encoding="utf-8"))
+        path = "apps/service/tesda/welding_smaw.json"
+        with open(path, 'r') as f:
+            self.track = json.load(f)
 
     def generate_score_report(self, user_competencies):
         matched = []

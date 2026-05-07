@@ -23,10 +23,6 @@ extraction_engine = ExtractorService()
 vision_engine = VisionService()
 scorer_engine = PathwayScorer()
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
 # --- Shared types -----------------------------------------------------------
 
 class Competency(BaseModel):
@@ -67,19 +63,14 @@ class ExtractResponse(BaseModel):
 
 @app.post("/extract", response_model=ExtractResponse)
 async def extract(req: ExtractRequest) -> ExtractResponse:
-    results = await extraction_engine.extract_from_text(req.transcript)
-    comps = [
-        Competency(
-            id=str(r.get("id") or ""),
-            taglish_label=str(r.get("taglish_label") or ""),
-            english_label=str(r.get("english_label") or ""),
-            confidence=float(r.get("confidence") or 0.0),
-            evidence_span=(str(r.get("evidence_span")) if r.get("evidence_span") is not None else None),
-        )
-        for r in results
-        if r.get("id") and r.get("taglish_label") and r.get("english_label")
-    ]
-    return ExtractResponse(competencies=comps)
+    # This logic usually calls GPT-4o or a similar LLM to pick out 
+    # competencies from the Taglish transcript.
+    
+    # Placeholder: If you have an extraction engine, call it here:
+    # results = await extraction_engine.extract_from_text(req.transcript)
+    
+    # For now, let's return an empty list or a basic mock so the frontend doesn't crash
+    return ExtractResponse(competencies=[])
 
 # --- /vision (Role 2) -------------------------------------------------------
 
