@@ -1,7 +1,5 @@
 import type { Config } from "tailwindcss";
 
-// Palette derived from DESIGN.md §8.4 (GitHub Primer light_high_contrast).
-// Colors map to CSS variables defined in app/globals.css.
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
@@ -52,12 +50,10 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
-          "Inter",
+          "Plus Jakarta Sans",
           "-apple-system",
           "BlinkMacSystemFont",
           "Segoe UI",
-          "Helvetica Neue",
-          "Arial",
           "sans-serif",
         ],
         mono: [
@@ -70,7 +66,26 @@ const config: Config = {
         ],
       },
       borderRadius: {
-        md: "6px",
+        md: "8px",
+      },
+      keyframes: {
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "pulse-dot": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.3" },
+        },
+        "glow-ring": {
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(37, 99, 235, 0.4)" },
+          "50%": { boxShadow: "0 0 0 6px rgba(37, 99, 235, 0)" },
+        },
+      },
+      animation: {
+        "fade-up": "fade-up 0.4s ease-out both",
+        "pulse-dot": "pulse-dot 1.2s ease-in-out infinite",
+        "glow-ring": "glow-ring 2s ease-in-out infinite",
       },
     },
   },

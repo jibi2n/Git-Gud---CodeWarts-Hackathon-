@@ -5,23 +5,24 @@
 const BASE = process.env.ML_SERVICE_URL;
 const KEY = process.env.ML_SERVICE_API_KEY;
 
-export const useDemoMode = !BASE;
+const ML_SERVICE_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
 
-export async function callML<TRes>(path: string, body: unknown): Promise<TRes> {
-  if (!BASE) {
-    throw new Error("ML_SERVICE_URL is not set; use demo fixtures instead.");
-  }
-  const r = await fetch(`${BASE}${path}`, {
+export const useDemoMode = false;
+
+export async function callML<T>(endpoint: string, body: unknown): Promise<T> {
+  const response = await fetch(`${ML_SERVICE_URL}${endpoint}`, {
     method: "POST",
     headers: {
-      "content-type": "application/json",
-      ...(KEY ? { "x-api-key": KEY } : {}),
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-    cache: "no-store",
   });
-  if (!r.ok) {
-    throw new Error(`ml ${path} ${r.status}`);
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error(`ML Service Error [${endpoint}]:`, errorBody);
+    throw new Error(`ML_SERVICE_FAILED: ${response.status}`);
   }
-  return (await r.json()) as TRes;
+
+  return response.json() as Promise<T>;
 }

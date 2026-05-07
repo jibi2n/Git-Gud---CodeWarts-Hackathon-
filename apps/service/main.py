@@ -1,117 +1,114 @@
-"""Boses FastAPI ML service.
-
-This service exposes the ML and data-pipeline endpoints consumed by the
-Next.js client (via Next.js API route handlers — see DESIGN.md §4.1).
-
-Routes (per docs/system-overview.md):
-    POST /transcribe   audio URL  -> transcript                  [Role 2]
-    POST /extract      transcript -> competencies                [Role 1 & 4]
-    POST /vision       image URL  -> inferred competencies       [Role 2]
-    POST /score        competencies -> readiness + job archetypes [Role 2]
-
-All external-AI calls happen behind this service. The frontend never calls
-OpenAI / Anthropic / Whisper / vision providers directly (AGENTS.md §6,
-DESIGN.md §11.3).
-"""
 from __future__ import annotations
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 
-from fastapi import FastAPI
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
+from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel, Field
+
+# Internal Service Imports
+from apps.service.transcription.whisper_service import TranscriptionService
+from apps.service.extraction.extractor_service import ExtractorService
+from apps.service.vision.vision_service import VisionService
+from apps.service.pathways.scorer import PathwayScorer
 
 app = FastAPI(title="Boses ML Service", version="0.1.0")
 
+# Instantiate Services
+transcriber = TranscriptionService()
+extraction_engine = ExtractorService()
+vision_engine = VisionService()
+scorer_engine = PathwayScorer()
 
-# --- Shared types (mirror docs/system-overview.md) ---------------------------
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+# --- Shared types -----------------------------------------------------------
 
 class Competency(BaseModel):
     id: str
     taglish_label: str
     english_label: str
     confidence: float = Field(ge=0.0, le=1.0)
-    evidence_span: str | None = None  # quote from transcript or OCR text
+    evidence_span: str | None = None
 
+# --- Existing /health and /extract (Role 1 & 4) kept as provided ---
 
-# --- Health ------------------------------------------------------------------
-
-class HealthResponse(BaseModel):
-    status: str
-    version: str
-
-
-@app.get("/health", response_model=HealthResponse)
-def health() -> HealthResponse:
-    return HealthResponse(status="ok", version=app.version)
-
-
-# --- /transcribe  (Role 2) ---------------------------------------------------
+# --- /transcribe (Role 2) ---------------------------------------------------
 
 class TranscribeRequest(BaseModel):
-    audio_url: str
+    audio_url: str  # In production, this might be a local path or signed URL
     session_id: str
-
 
 class TranscribeResponse(BaseModel):
     transcript: str
     duration_sec: float | None = None
 
-
 @app.post("/transcribe", response_model=TranscribeResponse)
-def transcribe(req: TranscribeRequest) -> TranscribeResponse:
-    """Stub. Role 2: implement Whisper integration + 24h raw-audio deletion."""
-    return TranscribeResponse(transcript="", duration_sec=None)
-
-
-# --- /extract  (Role 1 & 4) --------------------------------------------------
+async def transcribe(req: TranscribeRequest, background_tasks: BackgroundTasks) -> TranscribeResponse:
+    # 1. Integration: Call Whisper
+    text = await transcriber.transcribe(req.audio_url)
+    
+    # 2. Policy: Enforcement of 24h raw-audio deletion
+    background_tasks.add_task(transcriber.enforce_deletion_policy)
+    
+    return TranscribeResponse(transcript=text, duration_sec=None)
 
 class ExtractRequest(BaseModel):
     transcript: str
     session_id: str
 
-
 class ExtractResponse(BaseModel):
     competencies: list[Competency]
 
-
 @app.post("/extract", response_model=ExtractResponse)
-def extract(req: ExtractRequest) -> ExtractResponse:
-    """Stub. Role 1 & 4: implement using XLM-RoBERTa + LLM rephrasing.
+async def extract(req: ExtractRequest) -> ExtractResponse:
+    results = await extraction_engine.extract_from_text(req.transcript)
+    comps = [
+        Competency(
+            id=str(r.get("id") or ""),
+            taglish_label=str(r.get("taglish_label") or ""),
+            english_label=str(r.get("english_label") or ""),
+            confidence=float(r.get("confidence") or 0.0),
+            evidence_span=(str(r.get("evidence_span")) if r.get("evidence_span") is not None else None),
+        )
+        for r in results
+        if r.get("id") and r.get("taglish_label") and r.get("english_label")
+    ]
+    return ExtractResponse(competencies=comps)
 
-    Prompts live in apps/service/prompts/ — never inline.
-    """
-    return ExtractResponse(competencies=[])
-
-
-# --- /vision  (Role 2) -------------------------------------------------------
+# --- /vision (Role 2) -------------------------------------------------------
 
 class VisionRequest(BaseModel):
     image_url: str
     session_id: str
 
-
 class VisionResponse(BaseModel):
     inferred_competencies: list[Competency]
     raw_text: str | None = None
 
-
 @app.post("/vision", response_model=VisionResponse)
-def vision(req: VisionRequest) -> VisionResponse:
-    """Stub. Role 2: OCR via the declared vision provider; image bytes
-    are deleted after extraction.
-    """
-    return VisionResponse(inferred_competencies=[], raw_text=None)
+async def vision(req: VisionRequest) -> VisionResponse:
+    # Integration: OCR + Competency Mapping via Vision API
+    result = await vision_engine.analyze_credential(req.image_url)
+    return VisionResponse(
+        inferred_competencies=result["competencies"], 
+        raw_text=result["raw_text"]
+    )
 
-
-# --- /score  (Role 2) --------------------------------------------------------
+# --- /score (Role 2) --------------------------------------------------------
 
 class ScoreRequest(BaseModel):
     session_id: str
     competencies: list[Competency]
 
-
 class JobSuggestion(BaseModel):
     archetype: str
     reasoning: str
-
 
 class ReadinessScore(BaseModel):
     track_id: str
@@ -120,22 +117,11 @@ class ReadinessScore(BaseModel):
     missing_competencies: list[str]
     reasoning: str
 
-
 class ScoreResponse(BaseModel):
     readiness: ReadinessScore
     job_suggestions: list[JobSuggestion]
 
-
 @app.post("/score", response_model=ScoreResponse)
 def score(req: ScoreRequest) -> ScoreResponse:
-    """Stub. Role 2: rule-based scorer for the configured TESDA track."""
-    return ScoreResponse(
-        readiness=ReadinessScore(
-            track_id="",
-            score=0.0,
-            matched_competencies=[],
-            missing_competencies=[],
-            reasoning="",
-        ),
-        job_suggestions=[],
-    )
+    # Rule-based logic to map confirmed competencies to TESDA tracks
+    return scorer_engine.generate_score_report(req.competencies)
