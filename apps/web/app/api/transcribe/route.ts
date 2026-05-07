@@ -16,6 +16,7 @@ export async function POST(req: Request) {
     const r = await callML<TranscribeResponse>("/transcribe", body);
     return NextResponse.json(r);
   } catch (e) {
+    console.log(e);
     return NextResponse.json({ error: "ml_failed" }, { status: 502 });
   }
 }

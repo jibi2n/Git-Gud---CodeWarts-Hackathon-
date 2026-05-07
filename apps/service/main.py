@@ -1,10 +1,17 @@
 from __future__ import annotations
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel, Field
 
 # Internal Service Imports
 from apps.service.transcription.whisper_service import TranscriptionService
+from apps.service.extraction.extractor_service import ExtractorService
 from apps.service.vision.vision_service import VisionService
 from apps.service.pathways.scorer import PathwayScorer
 
@@ -12,6 +19,7 @@ app = FastAPI(title="Boses ML Service", version="0.1.0")
 
 # Instantiate Services
 transcriber = TranscriptionService()
+extraction_engine = ExtractorService()
 vision_engine = VisionService()
 scorer_engine = PathwayScorer()
 
@@ -45,6 +53,24 @@ async def transcribe(req: TranscribeRequest, background_tasks: BackgroundTasks) 
     background_tasks.add_task(transcriber.enforce_deletion_policy)
     
     return TranscribeResponse(transcript=text, duration_sec=None)
+
+class ExtractRequest(BaseModel):
+    transcript: str
+    session_id: str
+
+class ExtractResponse(BaseModel):
+    competencies: list[Competency]
+
+@app.post("/extract", response_model=ExtractResponse)
+async def extract(req: ExtractRequest) -> ExtractResponse:
+    # This logic usually calls GPT-4o or a similar LLM to pick out 
+    # competencies from the Taglish transcript.
+    
+    # Placeholder: If you have an extraction engine, call it here:
+    # results = await extraction_engine.extract_from_text(req.transcript)
+    
+    # For now, let's return an empty list or a basic mock so the frontend doesn't crash
+    return ExtractResponse(competencies=[])
 
 # --- /vision (Role 2) -------------------------------------------------------
 
