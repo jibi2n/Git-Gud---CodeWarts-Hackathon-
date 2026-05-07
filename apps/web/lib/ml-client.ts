@@ -2,7 +2,7 @@
 // When ML_SERVICE_URL is unset, callers should use demo-fixtures instead
 // (the API routes do this dispatch).
 
-const BASE = process.env.ML_SERVICE_URL;
+const BASE = process.env.ML_SERVICE_URL ?? process.env.BACKEND_URL;
 const KEY = process.env.ML_SERVICE_API_KEY;
 
 const ML_SERVICE_URL = process.env.BACKEND_URL || "http://127.0.0.1:8000";
