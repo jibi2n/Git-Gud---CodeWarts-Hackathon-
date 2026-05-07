@@ -15,7 +15,7 @@ from apps.service.extraction.extractor_service import ExtractorService
 from apps.service.vision.vision_service import VisionService
 from apps.service.pathways.scorer import PathwayScorer
 
-app = FastAPI(title="Boses ML Service", version="0.1.0")
+app = FastAPI(title="sana.AI ML Service", version="0.1.0")
 
 # Instantiate Services
 transcriber = TranscriptionService()
