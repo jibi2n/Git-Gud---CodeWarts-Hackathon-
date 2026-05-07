@@ -10,10 +10,10 @@ from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel, Field
 
 # Internal Service Imports
-from transcription.whisper_service import TranscriptionService
-from extraction.extractor_service import ExtractorService
-from vision.vision_service import VisionService
-from pathways.scorer import PathwayScorer
+from apps.service.transcription.whisper_service import TranscriptionService
+from apps.service.extraction.extractor_service import ExtractorService
+from apps.service.vision.vision_service import VisionService
+from apps.service.pathways.scorer import PathwayScorer
 
 app = FastAPI(title="Boses ML Service", version="0.1.0")
 
