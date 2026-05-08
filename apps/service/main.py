@@ -16,7 +16,7 @@ from apps.service.vision.vision_service import VisionService
 from apps.service.pathways.scorer import PathwayScorer
 from apps.service.llm.openai_score import score_welding
 
-app = FastAPI(title="Boses ML Service", version="0.1.0")
+app = FastAPI(title="sana.AI ML Service", version="0.1.0")
 
 # Instantiate Services
 transcriber = TranscriptionService()
