@@ -19,6 +19,21 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
+function tesdaRegulationUrl(trackId: string): string {
+  switch (trackId) {
+    case "welding-smaw-nc2":
+    case "tesda_welder_nc_ii":
+      return "https://tesda.gov.ph/Download/Training_Regulations?page=26";
+    default:
+      return "https://tesda.gov.ph/Download/Training_Regulations";
+  }
+}
+
+function jobListingUrl(archetype: string): string {
+  const q = encodeURIComponent(`${archetype} Philippines`);
+  return `https://www.google.com/search?q=${q}`;
+}
+
 export default function ProfilePage({
   params,
 }: {
@@ -37,6 +52,7 @@ export default function ProfilePage({
   const readiness = useProfileStore((s) => s.readiness);
   const jobs = useProfileStore((s) => s.jobSuggestions);
   const confirmed = useProfileStore((s) => s.confirmedCompetencies());
+  const tesdaUrl = tesdaRegulationUrl(readiness?.track_id ?? "");
 
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -286,14 +302,20 @@ export default function ProfilePage({
                 </div>
               )}
               {readiness.missing_competencies.length > 0 && (
-                <div className="mt-3 rounded-md border border-purple-500/30 bg-purple-950/30 px-3 py-2">
+                <a
+                  className="mt-3 block rounded-md border border-purple-500/30 bg-purple-950/30 px-3 py-2 transition-colors hover:border-purple-400/60 focus:outline-none focus:ring-2 focus:ring-purple-400/40"
+                  href={tesdaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open TESDA training regulation"
+                >
                   <p className="text-[13px] font-semibold text-purple-400 uppercase tracking-wider mb-1">
                     Areas to develop
                   </p>
                   <p className="text-[14px] text-purple-300">
                     {readiness.missing_competencies.join(", ")}
                   </p>
-                </div>
+                </a>
               )}
             </CardContent>
             <CardFooter>
@@ -323,17 +345,25 @@ export default function ProfilePage({
               const accent = i % 3 === 0 ? "border-orange-500/30 bg-orange-950/20" : i % 3 === 1 ? "border-blue-500/30 bg-blue-950/20" : "border-border bg-bg-subtle";
               const titleColor = i % 3 === 0 ? "text-orange-300" : i % 3 === 1 ? "text-blue-300" : "text-white";
               return (
-                <Card
+                <a
                   key={i}
-                  size="sm"
-                  className={`animate-fade-up [animation-fill-mode:both] ${accent}`}
-                  style={{ animationDelay: `${320 + i * 60}ms` }}
+                  className="block focus:outline-none focus:ring-2 focus:ring-orange-400/40 rounded-md"
+                  href={jobListingUrl(j.archetype)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Open job listings for ${j.archetype}`}
                 >
-                  <CardHeader>
-                    <CardTitle className={titleColor}>{j.archetype}</CardTitle>
-                    <CardDescription>{j.reasoning}</CardDescription>
-                  </CardHeader>
-                </Card>
+                  <Card
+                    size="sm"
+                    className={`animate-fade-up [animation-fill-mode:both] ${accent}`}
+                    style={{ animationDelay: `${320 + i * 60}ms` }}
+                  >
+                    <CardHeader>
+                      <CardTitle className={titleColor}>{j.archetype}</CardTitle>
+                      <CardDescription>{j.reasoning}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                </a>
               );
             })}
           </div>
