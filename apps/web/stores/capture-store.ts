@@ -16,6 +16,9 @@ type CaptureState = {
   audioUrl: string | null;
   audioUploadStatus: UploadStatus;
   documents: DocumentItem[];
+  resumeFile: File | null;
+  resumeUrl: string | null;
+  resumeUploadStatus: UploadStatus;
 
   setAudio: (blob: Blob, durationSec?: number) => void;
   setAudioUrl: (url: string | null) => void;
@@ -25,6 +28,10 @@ type CaptureState = {
   setDocumentUrl: (id: string, url: string | null) => void;
   setDocumentUploadStatus: (id: string, status: UploadStatus) => void;
   removeDocument: (id: string) => void;
+
+  setResumeFile: (file: File | null) => void;
+  setResumeUrl: (url: string | null) => void;
+  setResumeUploadStatus: (status: UploadStatus) => void;
 
   reset: () => void;
 };
@@ -41,6 +48,9 @@ export const useCaptureStore = create<CaptureState>((set) => ({
   audioUrl: null,
   audioUploadStatus: "idle",
   documents: [],
+  resumeFile: null,
+  resumeUrl: null,
+  resumeUploadStatus: "idle",
 
   setAudio: (blob) => set({ audioBlob: blob }),
   setAudioUrl: (url) => set({ audioUrl: url }),
@@ -69,12 +79,18 @@ export const useCaptureStore = create<CaptureState>((set) => ({
   removeDocument: (id) =>
     set((s) => ({ documents: s.documents.filter((d) => d.id !== id) })),
 
+  setResumeFile: (resumeFile) => set({ resumeFile }),
+  setResumeUrl: (resumeUrl) => set({ resumeUrl }),
+  setResumeUploadStatus: (resumeUploadStatus) => set({ resumeUploadStatus }),
+
   reset: () =>
     set({
       audioBlob: null,
       audioUrl: null,
       audioUploadStatus: "idle",
       documents: [],
+      resumeFile: null,
+      resumeUrl: null,
+      resumeUploadStatus: "idle",
     }),
 }));
-

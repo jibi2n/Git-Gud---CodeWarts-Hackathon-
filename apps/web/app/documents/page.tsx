@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/stores/session-store";
@@ -13,6 +13,21 @@ import { Card } from "@/components/ui/card";
 import { tl } from "@/locales/tl";
 import { cn } from "@/lib/utils";
 
+function isAllowedResume(file: File): boolean {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  return ext === "pdf" || ext === "doc" || ext === "docx";
+}
+
+function resumeContentType(file: File): string {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  if (ext === "pdf") return "application/pdf";
+  if (ext === "doc") return "application/msword";
+  if (ext === "docx") {
+    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  }
+  return file.type || "application/octet-stream";
+}
+
 export default function DocumentsPage() {
   const router = useRouter();
   const sessionId = useSessionStore((s) => s.sessionId);
@@ -23,8 +38,14 @@ export default function DocumentsPage() {
   const removeDocument = useCaptureStore((s) => s.removeDocument);
   const setDocumentUrl = useCaptureStore((s) => s.setDocumentUrl);
   const setDocumentUploadStatus = useCaptureStore((s) => s.setDocumentUploadStatus);
+  const resumeFile = useCaptureStore((s) => s.resumeFile);
+  const resumeUploadStatus = useCaptureStore((s) => s.resumeUploadStatus);
+  const setResumeFile = useCaptureStore((s) => s.setResumeFile);
+  const setResumeUrl = useCaptureStore((s) => s.setResumeUrl);
+  const setResumeUploadStatus = useCaptureStore((s) => s.setResumeUploadStatus);
 
   const [error, setError] = useState<string | null>(null);
+  const resumeInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!sessionId) router.push("/");
@@ -57,6 +78,66 @@ export default function DocumentsPage() {
       setDocumentUploadStatus(id, "error");
       setError(tl.errors.generic);
     }
+  }
+
+  async function onResumeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!sessionId) return;
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setError(null);
+    if (!isAllowedResume(file)) {
+      setError("Please upload a PDF or Word file (.pdf, .doc, .docx).");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Resume file is too large. Please upload a file under 10MB.");
+      return;
+    }
+
+    setResumeFile(file);
+    setResumeUploadStatus("uploading");
+
+    try {
+      const ext = (file.name.split(".").pop() || "pdf").toLowerCase();
+      const path = `sessions/${sessionId}/resume.${ext}`;
+      const primaryContentType = resumeContentType(file);
+      let signedUrl: string;
+      try {
+        signedUrl = await uploadToSupabaseStorage({
+          bucket: "documents",
+          path,
+          file,
+          contentType: primaryContentType,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "";
+        if (msg.includes("mime type") && msg.includes("is not supported")) {
+          signedUrl = await uploadToSupabaseStorage({
+            bucket: "documents",
+            path,
+            file,
+            contentType: "application/octet-stream",
+          });
+        } else {
+          throw e;
+        }
+      }
+      setResumeUrl(signedUrl);
+      setResumeUploadStatus("uploaded");
+    } catch (err) {
+      setResumeUploadStatus("error");
+      const message =
+        err instanceof Error && err.message ? err.message : tl.errors.generic;
+      setError(message);
+    }
+  }
+
+  function removeResume() {
+    setResumeFile(null);
+    setResumeUrl(null);
+    setResumeUploadStatus("idle");
   }
 
   function goProcessing() {
@@ -96,6 +177,70 @@ export default function DocumentsPage() {
       <div className="animate-fade-up [animation-delay:60ms] [animation-fill-mode:both]">
         <DocumentCamera maxImages={remaining} onAdd={onAdd} onSkip={goProcessing} />
       </div>
+
+      <section className="mt-5 animate-fade-up [animation-delay:90ms] [animation-fill-mode:both]">
+        <Card className="p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-[14px] font-semibold">Resume (optional)</div>
+              <p className="mt-1 text-[13px] text-fg-muted">
+                Upload a PDF or Word file so you can keep it with this session.
+              </p>
+            </div>
+            <div className={cn(resumeUploadStatus === "uploading" ? "opacity-60" : "")}>
+              <input
+                ref={resumeInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={onResumeChange}
+                className="hidden"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={resumeUploadStatus === "uploading"}
+                onClick={() => resumeInputRef.current?.click()}
+              >
+                {resumeFile ? "Replace" : "Upload"}
+              </Button>
+            </div>
+          </div>
+
+          {resumeFile && (
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-1">
+                <div className="text-[13px] font-medium break-all">{resumeFile.name}</div>
+                <Badge
+                  variant={
+                    resumeUploadStatus === "uploaded"
+                      ? "success"
+                      : resumeUploadStatus === "error"
+                      ? "destructive"
+                      : "secondary"
+                  }
+                  className="w-fit"
+                >
+                  {resumeUploadStatus === "uploaded"
+                    ? "Uploaded"
+                    : resumeUploadStatus === "uploading"
+                    ? "Uploading…"
+                    : resumeUploadStatus === "error"
+                    ? "Error"
+                    : "Ready"}
+                </Badge>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={removeResume}
+                disabled={resumeUploadStatus === "uploading"}
+              >
+                Remove
+              </Button>
+            </div>
+          )}
+        </Card>
+      </section>
 
       {hasDocuments && (
         <section className="mt-5 flex flex-col gap-3">
