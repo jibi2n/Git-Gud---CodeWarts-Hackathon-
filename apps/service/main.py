@@ -14,6 +14,7 @@ from apps.service.transcription.whisper_service import TranscriptionService
 from apps.service.extraction.extractor_service import ExtractorService
 from apps.service.vision.vision_service import VisionService
 from apps.service.pathways.scorer import PathwayScorer
+from apps.service.llm.openai_score import score_welding
 
 app = FastAPI(title="Boses ML Service", version="0.1.0")
 
@@ -22,6 +23,11 @@ transcriber = TranscriptionService()
 extraction_engine = ExtractorService()
 vision_engine = VisionService()
 scorer_engine = PathwayScorer()
+
+
+@app.get("/health")
+def health() -> dict:
+    return {"status": "ok"}
 
 # --- Shared types -----------------------------------------------------------
 
@@ -63,14 +69,8 @@ class ExtractResponse(BaseModel):
 
 @app.post("/extract", response_model=ExtractResponse)
 async def extract(req: ExtractRequest) -> ExtractResponse:
-    # This logic usually calls GPT-4o or a similar LLM to pick out 
-    # competencies from the Taglish transcript.
-    
-    # Placeholder: If you have an extraction engine, call it here:
-    # results = await extraction_engine.extract_from_text(req.transcript)
-    
-    # For now, let's return an empty list or a basic mock so the frontend doesn't crash
-    return ExtractResponse(competencies=[])
+    results = await extraction_engine.extract_from_text(req.transcript)
+    return ExtractResponse(competencies=[Competency(**r) for r in results])
 
 # --- /vision (Role 2) -------------------------------------------------------
 
@@ -114,5 +114,22 @@ class ScoreResponse(BaseModel):
 
 @app.post("/score", response_model=ScoreResponse)
 def score(req: ScoreRequest) -> ScoreResponse:
-    # Rule-based logic to map confirmed competencies to TESDA tracks
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        try:
+            payload = [
+                {
+                    "id": c.id,
+                    "taglish_label": c.taglish_label,
+                    "english_label": c.english_label,
+                    "confidence": c.confidence,
+                    "evidence_span": c.evidence_span,
+                }
+                for c in req.competencies
+            ]
+            llm = score_welding(api_key=api_key, competencies=payload)
+            return ScoreResponse.model_validate(llm)
+        except Exception:
+            pass
+
     return scorer_engine.generate_score_report(req.competencies)
