@@ -3,5 +3,8 @@ from pathlib import Path
 
 
 SERVICE_DIR = Path(__file__).resolve().parents[1]
-if str(SERVICE_DIR) not in sys.path:
-    sys.path.insert(0, str(SERVICE_DIR))
+ROOT_DIR = Path(__file__).resolve().parents[3]
+
+for p in (str(ROOT_DIR), str(SERVICE_DIR)):
+    if p not in sys.path:
+        sys.path.insert(0, p)
