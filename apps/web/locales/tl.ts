@@ -57,6 +57,11 @@ export const tl = {
     stateRejected: "Removed",
     readinessTitle: "TESDA Readiness",
     jobsTitle: "Job opportunities",
+    nearbyJobsTitle: "Nearby jobs (2km)",
+    nearbyJobsCta: "Use my location",
+    nearbyJobsDenied: "Location permission is blocked. You can still open job listings below.",
+    nearbyJobsUnavailable: "Location is unavailable on this device/browser. You can still open job listings below.",
+    nearbyJobsNoResults: "No jobs found within 2km.",
     pdfCta: "Download Report",
     disclaimer:
       "This score is a guide only, not a guarantee. Please consult TESDA for an official assessment.",

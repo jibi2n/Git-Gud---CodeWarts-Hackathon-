@@ -12,6 +12,8 @@ Adding a new tool requires a use case spec, an implementation plan, an entry in 
 | **OpenAI API** *(or)* **Anthropic API** | LLM for formal-vocabulary rephrasing on extracted competencies | Transcript text only — never raw audio, never PII beyond what is in the transcript | API key, completions/messages only | Cached prompts → degrade to rule-based rephrasing |
 | **HuggingFace Inference / model hub** | XLM-RoBERTa for Taglish competency extraction | Transcript text | Read-only model download / inference token | Fall back to LLM-based extraction |
 | **Vision OCR provider** *(decide Day 1: OpenAI Vision or Google Cloud Vision)* | OCR of informal credential photos | Image bytes; deleted after extraction | API key, OCR only | Skip that document, log it, continue (DESIGN.md §7.1) |
+| **Mapbox Static Images API** *(optional)* | Map image for nearby job pins | Approx user lat/lng + map viewport derived from location | Public token (client-side) | Fall back to list-only job links |
+| **Google Maps (web)** *(links only)* | Open directions/job locations in browser | User lat/lng in URL when user taps a link | No API key | Show text-only job links |
 | **Supabase** | Object storage (audio, images), Postgres (sessions, profiles, competencies) | All user data per consent flow | Anon key for client uploads to scoped buckets; service role key server-side only | N/A — required dependency |
 
 ## Forbidden by default

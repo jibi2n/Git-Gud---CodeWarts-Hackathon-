@@ -3,8 +3,9 @@
 import { useProfileStore } from "@/stores/profile-store";
 import { useSessionStore } from "@/stores/session-store";
 import { useCaptureStore } from "@/stores/capture-store";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { tl } from "@/locales/tl";
 import type { Competency } from "@/types/api";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,86 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+
+function tesdaRegulationUrl(trackId: string): string {
+  switch (trackId) {
+    case "welding-smaw-nc2":
+    case "tesda_welder_nc_ii":
+      return "https://tesda.gov.ph/Download/Training_Regulations?page=26";
+    default:
+      return "https://tesda.gov.ph/Download/Training_Regulations";
+  }
+}
+
+function jobListingUrl(archetype: string): string {
+  const q = encodeURIComponent(`${archetype} Philippines`);
+  return `https://www.google.com/search?q=${q}`;
+}
+
+type LatLng = { lat: number; lng: number };
+
+function haversineKm(a: LatLng, b: LatLng): number {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLng / 2);
+  const h = s1 * s1 + Math.cos(lat1) * Math.cos(lat2) * s2 * s2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+function hashToUnit(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) / 4294967295;
+}
+
+function offsetByMeters(origin: LatLng, eastMeters: number, northMeters: number): LatLng {
+  const latRad = (origin.lat * Math.PI) / 180;
+  const metersPerDegLat = 111320;
+  const metersPerDegLng = 111320 * Math.cos(latRad);
+  return {
+    lat: origin.lat + northMeters / metersPerDegLat,
+    lng: origin.lng + eastMeters / metersPerDegLng,
+  };
+}
+
+function makeNearbyPoints(center: LatLng, seed: string, count: number, radiusMeters: number): LatLng[] {
+  const out: LatLng[] = [];
+  for (let i = 0; i < count; i++) {
+    const u = hashToUnit(`${seed}:${i}:r`);
+    const v = hashToUnit(`${seed}:${i}:t`);
+    const r = Math.sqrt(u) * radiusMeters;
+    const theta = v * Math.PI * 2;
+    const east = Math.cos(theta) * r;
+    const north = Math.sin(theta) * r;
+    out.push(offsetByMeters(center, east, north));
+  }
+  return out;
+}
+
+function googleMapsDirectionsUrl(dest: LatLng): string {
+  const q = encodeURIComponent(`${dest.lat},${dest.lng}`);
+  return `https://www.google.com/maps/dir/?api=1&destination=${q}`;
+}
+
+function mapboxStaticUrl(options: {
+  token: string;
+  user: LatLng;
+  pins: Array<{ id: string; at: LatLng }>;
+}): string {
+  const center = `${options.user.lng},${options.user.lat}`;
+  const userPin = `pin-s+2563eb(${options.user.lng},${options.user.lat})`;
+  const jobPins = options.pins.map((p) => `pin-s+f97316(${p.at.lng},${p.at.lat})`);
+  const overlays = [userPin, ...jobPins].join(",");
+  const token = encodeURIComponent(options.token);
+  return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${overlays}/${center},14/600x360?access_token=${token}&logo=false&attribution=false`;
+}
 
 export default function ProfilePage({
   params,
@@ -37,9 +118,55 @@ export default function ProfilePage({
   const readiness = useProfileStore((s) => s.readiness);
   const jobs = useProfileStore((s) => s.jobSuggestions);
   const confirmed = useProfileStore((s) => s.confirmedCompetencies());
+  const tesdaUrl = tesdaRegulationUrl(readiness?.track_id ?? "");
+  const resumeUrl = useCaptureStore((s) => s.resumeUrl);
+  const resumeFile = useCaptureStore((s) => s.resumeFile);
+  const documents = useCaptureStore((s) => s.documents);
 
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const documentPreviews = useMemo(() => {
+    return documents.map((d) => ({
+      id: d.id,
+      localUrl: URL.createObjectURL(d.file),
+      signedUrl: d.url,
+    }));
+  }, [documents]);
+
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+  const [location, setLocation] = useState<LatLng | null>(null);
+  const [locationStatus, setLocationStatus] = useState<
+    "idle" | "loading" | "denied" | "unavailable" | "error"
+  >("idle");
+
+  const nearbyJobs = useMemo(() => {
+    if (!location || jobs.length === 0) return [];
+    const pts = makeNearbyPoints(location, `${storeSessionId}:jobs`, jobs.length, 1800);
+    return jobs
+      .map((j, i) => {
+        const at = pts[i] ?? location;
+        const distanceKm = haversineKm(location, at);
+        return { job: j, at, distanceKm };
+      })
+      .filter((x) => x.distanceKm <= 2)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }, [jobs, location, storeSessionId]);
+
+  const mapUrl = useMemo(() => {
+    if (!location || !mapboxToken || nearbyJobs.length === 0) return null;
+    return mapboxStaticUrl({
+      token: mapboxToken,
+      user: location,
+      pins: nearbyJobs.map((x, i) => ({ id: `${i}`, at: x.at })),
+    });
+  }, [location, mapboxToken, nearbyJobs]);
+
+  useEffect(() => {
+    return () => {
+      for (const p of documentPreviews) URL.revokeObjectURL(p.localUrl);
+    };
+  }, [documentPreviews]);
 
   useEffect(() => {
     if (!storeSessionId || storeSessionId !== params.sessionId) {
@@ -204,6 +331,26 @@ export default function ProfilePage({
     }
   }
 
+  function requestLocation() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setLocationStatus("unavailable");
+      return;
+    }
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocationStatus("idle");
+      },
+      (err) => {
+        if (err.code === 1) setLocationStatus("denied");
+        else if (err.code === 2) setLocationStatus("unavailable");
+        else setLocationStatus("error");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60_000 }
+    );
+  }
+
   async function deleteData() {
     setDeleting(true);
     try {
@@ -233,6 +380,47 @@ export default function ProfilePage({
           <p className="mt-3 rounded-md border border-border bg-bg-subtle px-4 py-3 text-[14px] italic leading-relaxed text-fg-muted">
             "{transcript}"
           </p>
+        )}
+        {documentPreviews.length > 0 && (
+          <div className="mt-4 rounded-md border border-border bg-bg-subtle px-4 py-3">
+            <div className="text-[13px] font-semibold uppercase tracking-wider text-fg-muted">
+              Uploaded images
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {documentPreviews.map((p) => (
+                <a
+                  key={p.id}
+                  href={p.signedUrl ?? p.localUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block overflow-hidden rounded-md border border-border-muted focus:outline-none focus:ring-2 focus:ring-accent-fg/40"
+                  aria-label="Open uploaded image"
+                >
+                  <Image
+                    src={p.localUrl}
+                    alt=""
+                    width={160}
+                    height={160}
+                    unoptimized
+                    className="h-20 w-full object-cover"
+                  />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+        {resumeUrl && (
+          <div className="mt-3">
+            <a
+              href={resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-md border border-border bg-bg-subtle px-4 py-2 text-[14px] font-semibold text-fg-muted transition-colors hover:text-fg hover:border-border-muted"
+              aria-label="Open uploaded resume"
+            >
+              View resume{resumeFile?.name ? `: ${resumeFile.name}` : ""}
+            </a>
+          </div>
         )}
       </header>
 
@@ -286,14 +474,20 @@ export default function ProfilePage({
                 </div>
               )}
               {readiness.missing_competencies.length > 0 && (
-                <div className="mt-3 rounded-md border border-purple-500/30 bg-purple-950/30 px-3 py-2">
+                <a
+                  className="mt-3 block rounded-md border border-purple-500/30 bg-purple-950/30 px-3 py-2 transition-colors hover:border-purple-400/60 focus:outline-none focus:ring-2 focus:ring-purple-400/40"
+                  href={tesdaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open TESDA training regulation"
+                >
                   <p className="text-[13px] font-semibold text-purple-400 uppercase tracking-wider mb-1">
                     Areas to develop
                   </p>
                   <p className="text-[14px] text-purple-300">
                     {readiness.missing_competencies.join(", ")}
                   </p>
-                </div>
+                </a>
               )}
             </CardContent>
             <CardFooter>
@@ -311,6 +505,82 @@ export default function ProfilePage({
       )}
 
       {jobs.length > 0 && (
+        <section className="mt-8 animate-fade-up [animation-delay:260ms] [animation-fill-mode:both]">
+          <h2 className="mb-4 text-[22px] font-[800] leading-tight tracking-tight text-white">
+            {tl.profile.nearbyJobsTitle}
+          </h2>
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={requestLocation}
+              disabled={locationStatus === "loading"}
+            >
+              {locationStatus === "loading" ? "Locating…" : tl.profile.nearbyJobsCta}
+            </Button>
+            {location ? (
+              <span className="text-[13px] text-fg-muted">
+                {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+              </span>
+            ) : null}
+          </div>
+
+          {locationStatus === "denied" && (
+            <div className="mt-3 rounded-md border border-border bg-bg-subtle px-4 py-3 text-[14px] text-fg-muted">
+              {tl.profile.nearbyJobsDenied}
+            </div>
+          )}
+          {(locationStatus === "unavailable" || locationStatus === "error") && (
+            <div className="mt-3 rounded-md border border-border bg-bg-subtle px-4 py-3 text-[14px] text-fg-muted">
+              {tl.profile.nearbyJobsUnavailable}
+            </div>
+          )}
+
+          {location && nearbyJobs.length === 0 && (
+            <div className="mt-3 rounded-md border border-border bg-bg-subtle px-4 py-3 text-[14px] text-fg-muted">
+              {tl.profile.nearbyJobsNoResults}
+            </div>
+          )}
+
+          {location && nearbyJobs.length > 0 && (
+            <div className="mt-4 flex flex-col gap-3">
+              {mapUrl && (
+                <div className="overflow-hidden rounded-md border border-border bg-bg-subtle">
+                  <img src={mapUrl} alt="" className="h-auto w-full" />
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                {nearbyJobs.map((x, i) => (
+                  <Card key={i} size="sm" className="bg-bg-subtle">
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <CardTitle className="text-white">{x.job.archetype}</CardTitle>
+                          <CardDescription>{Math.round(x.distanceKm * 1000)}m away</CardDescription>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <a
+                            href={googleMapsDirectionsUrl(x.at)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center rounded-md border border-border bg-bg-subtle px-3 py-2 text-[13px] font-semibold text-fg-muted transition-colors hover:text-fg hover:border-border-muted"
+                            aria-label={`Open directions for ${x.job.archetype}`}
+                          >
+                            Directions
+                          </a>
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {jobs.length > 0 && (
         <section className="mt-8 animate-fade-up [animation-delay:280ms] [animation-fill-mode:both]">
           <h2 className="mb-1 text-[13px] font-semibold uppercase tracking-widest text-orange-400">
             Opportunities
@@ -323,17 +593,25 @@ export default function ProfilePage({
               const accent = i % 3 === 0 ? "border-orange-500/30 bg-orange-950/20" : i % 3 === 1 ? "border-blue-500/30 bg-blue-950/20" : "border-border bg-bg-subtle";
               const titleColor = i % 3 === 0 ? "text-orange-300" : i % 3 === 1 ? "text-blue-300" : "text-white";
               return (
-                <Card
+                <a
                   key={i}
-                  size="sm"
-                  className={`animate-fade-up [animation-fill-mode:both] ${accent}`}
-                  style={{ animationDelay: `${320 + i * 60}ms` }}
+                  className="block focus:outline-none focus:ring-2 focus:ring-orange-400/40 rounded-md"
+                  href={jobListingUrl(j.archetype)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Open job listings for ${j.archetype}`}
                 >
-                  <CardHeader>
-                    <CardTitle className={titleColor}>{j.archetype}</CardTitle>
-                    <CardDescription>{j.reasoning}</CardDescription>
-                  </CardHeader>
-                </Card>
+                  <Card
+                    size="sm"
+                    className={`animate-fade-up [animation-fill-mode:both] ${accent}`}
+                    style={{ animationDelay: `${320 + i * 60}ms` }}
+                  >
+                    <CardHeader>
+                      <CardTitle className={titleColor}>{j.archetype}</CardTitle>
+                      <CardDescription>{j.reasoning}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                </a>
               );
             })}
           </div>
