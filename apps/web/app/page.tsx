@@ -1,5 +1,8 @@
 import { ConsentGate } from "@/components/consent/ConsentGate";
 import { tl } from "@/locales/tl";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function Page() {
   return (
@@ -36,8 +39,17 @@ export default function Page() {
         <ConsentGate />
       </div>
 
-      <footer className="absolute bottom-5 left-6 text-[12px] text-fg-subtle">
-        sana.AI · Hackathon build · Demo mode
+      <footer className="mt-auto flex flex-col gap-3 pt-10 text-[12px] text-fg-subtle">
+        <Link
+          href="/modules"
+          className={cn(
+            buttonVariants({ variant: "secondary", size: "lg" }),
+            "min-h-[56px] text-[17px]"
+          )}
+        >
+          Open modules (welding demo)
+        </Link>
+        <div>San.AI · Hackathon build · Demo mode</div>
       </footer>
     </main>
   );

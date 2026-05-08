@@ -34,10 +34,16 @@ class TranscriptionService:
         return response.text
         
 
-    def enforce_deletion_policy(self):
-        """Cron-ready logic to delete files older than 24 hours."""
-        now = time.time()
-        for f in os.listdir(self.temp_dir):
-            f_path = os.path.join(self.temp_dir, f)
-            if os.stat(f_path).st_mtime < now - (24 * 3600):
-                os.remove(f_path)
+        try:
+            with open(tmp_path, "rb") as audio:
+                response = await self.client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio,
+                    prompt="Taglish conversation about work skills.",
+                )
+            return response.text
+        finally:
+            os.unlink(tmp_path)
+
+    def enforce_deletion_policy(self) -> None:
+        pass

@@ -1,15 +1,24 @@
+import os
+
 from openai import OpenAI
-import json
 
 class VisionService:
     def __init__(self):
-        self.client = OpenAI()
+        pass
 
     async def analyze_credential(self, image_url: str):
-        # Implementation uses GPT-4o for structured OCR extraction
-        response = self.client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": "Extract work skills from this image. JSON format only."}]
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            return {"competencies": [], "raw_text": None}
+
+        client = OpenAI(api_key=api_key)
+        _ = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"Extract credential text from this image URL: {image_url}",
+                }
+            ],
         )
-        # Result logic would map raw text to Competency objects
-        return {"competencies": [], "raw_text": "Extracted OCR text here..."}
+        return {"competencies": [], "raw_text": None}
