@@ -3,8 +3,9 @@
 import { useProfileStore } from "@/stores/profile-store";
 import { useSessionStore } from "@/stores/session-store";
 import { useCaptureStore } from "@/stores/capture-store";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { tl } from "@/locales/tl";
 import type { Competency } from "@/types/api";
 import { Button } from "@/components/ui/button";
@@ -53,9 +54,26 @@ export default function ProfilePage({
   const jobs = useProfileStore((s) => s.jobSuggestions);
   const confirmed = useProfileStore((s) => s.confirmedCompetencies());
   const tesdaUrl = tesdaRegulationUrl(readiness?.track_id ?? "");
+  const resumeUrl = useCaptureStore((s) => s.resumeUrl);
+  const resumeFile = useCaptureStore((s) => s.resumeFile);
+  const documents = useCaptureStore((s) => s.documents);
 
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const documentPreviews = useMemo(() => {
+    return documents.map((d) => ({
+      id: d.id,
+      localUrl: URL.createObjectURL(d.file),
+      signedUrl: d.url,
+    }));
+  }, [documents]);
+
+  useEffect(() => {
+    return () => {
+      for (const p of documentPreviews) URL.revokeObjectURL(p.localUrl);
+    };
+  }, [documentPreviews]);
 
   useEffect(() => {
     if (!storeSessionId || storeSessionId !== params.sessionId) {
@@ -249,6 +267,47 @@ export default function ProfilePage({
           <p className="mt-3 rounded-md border border-border bg-bg-subtle px-4 py-3 text-[14px] italic leading-relaxed text-fg-muted">
             "{transcript}"
           </p>
+        )}
+        {documentPreviews.length > 0 && (
+          <div className="mt-4 rounded-md border border-border bg-bg-subtle px-4 py-3">
+            <div className="text-[13px] font-semibold uppercase tracking-wider text-fg-muted">
+              Uploaded images
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {documentPreviews.map((p) => (
+                <a
+                  key={p.id}
+                  href={p.signedUrl ?? p.localUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block overflow-hidden rounded-md border border-border-muted focus:outline-none focus:ring-2 focus:ring-accent-fg/40"
+                  aria-label="Open uploaded image"
+                >
+                  <Image
+                    src={p.localUrl}
+                    alt=""
+                    width={160}
+                    height={160}
+                    unoptimized
+                    className="h-20 w-full object-cover"
+                  />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+        {resumeUrl && (
+          <div className="mt-3">
+            <a
+              href={resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-md border border-border bg-bg-subtle px-4 py-2 text-[14px] font-semibold text-fg-muted transition-colors hover:text-fg hover:border-border-muted"
+              aria-label="Open uploaded resume"
+            >
+              View resume{resumeFile?.name ? `: ${resumeFile.name}` : ""}
+            </a>
+          </div>
         )}
       </header>
 
