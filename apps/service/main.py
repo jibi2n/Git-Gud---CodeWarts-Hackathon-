@@ -69,14 +69,8 @@ class ExtractResponse(BaseModel):
 
 @app.post("/extract", response_model=ExtractResponse)
 async def extract(req: ExtractRequest) -> ExtractResponse:
-    # This logic usually calls GPT-4o or a similar LLM to pick out 
-    # competencies from the Taglish transcript.
-    
-    # Placeholder: If you have an extraction engine, call it here:
-    # results = await extraction_engine.extract_from_text(req.transcript)
-    
-    # For now, let's return an empty list or a basic mock so the frontend doesn't crash
-    return ExtractResponse(competencies=[])
+    results = await extraction_engine.extract_from_text(req.transcript)
+    return ExtractResponse(competencies=[Competency(**r) for r in results])
 
 # --- /vision (Role 2) -------------------------------------------------------
 
