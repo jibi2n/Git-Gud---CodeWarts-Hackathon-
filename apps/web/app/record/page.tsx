@@ -25,7 +25,8 @@ export default function RecordPage() {
       router.push("/");
       return;
     }
-    router.push(`/processing?audio=demo://taglish-sample-1`);
+    setAudioUrl(null);
+    router.push("/documents");
   }
 
   async function upload(blob: Blob) {
@@ -54,17 +55,7 @@ export default function RecordPage() {
   }
 
   function goNext() {
-    const audioUrlFromStore = useCaptureStore.getState().audioUrl;
-
-    console.log(audioUrlFromStore);
-
-    if (audioUrlFromStore) {
-      // Pass the real Supabase URL to the processing page
-      router.push(`/processing?audio=${encodeURIComponent(audioUrlFromStore)}`);
-    } else {
-      // Fallback if upload failed or didn't happen
-      router.push("/documents");
-    }
+    router.push("/documents");
   }
 
   const canContinue = audioUploadStatus === "uploaded" || audioUploadStatus === "error";
